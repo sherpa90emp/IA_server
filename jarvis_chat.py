@@ -1,7 +1,7 @@
 import openvino_genai as ov_genai
 import os
 
-# Ottieni il percorso assoluto della cartella scaricata
+
 model_path = os.path.abspath("../models/Qwen1.5B-OV")
 
 print(f"Sto caricando Jarvis dalla cartella: {model_path}")
