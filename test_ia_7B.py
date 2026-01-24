@@ -3,14 +3,15 @@ import openvino as ov
 from huggingface_hub import snapshot_download
 import os
 
-model_name = "Qwen2.5-7B-Instructint4-ov"
+model_name = "Qwen2.5-7B-Instruct-int4-ov"
 model_path = f"../models/{model_name}"
 
 if not os.path.exists(model_path) :
-    print(f"Scaricamento del modello {model_name} ottimizzato da Huggingface...")
+    print(f"\nScaricamento del modello {model_name} ottimizzato da Huggingface...")
     snapshot_download(f"OpenVINO/{model_name}", local_dir=model_path)
+    print("\nDownload completato.")
 else :
-    print(f"Modello {model_name} già presente localmente. Procedo al caricamento...")
+    print(f"\nModello {model_name} già presente localmente. Procedo al caricamento...")
 
 core = ov.Core()
 devices = core.available_devices
@@ -29,14 +30,14 @@ for device in devices :
         model_device_name_CPU = full_name 
 
 try :
-    print(f"Provo a caricare il modello {model_name} sulla {model_device_name_GPU} da {model_path}")
+    print(f"\nProvo a caricare il modello {model_name} sulla {model_device_name_GPU} da {model_path}")
     pipe = ov_genai.LLMPipeline(model_path, target_device)
-    print(f"Modello caricato correttamente su {model_device_name_GPU}")
+    print(f"\nModello caricato correttamente su {model_device_name_GPU}")
 except Exception as e :
-    print(f"Errore caricamento su {model_device_name_GPU} : {e}")
-    print(f"Provo a caricare il modello {model_name} su {model_device_name_CPU}...")
+    print(f"\nErrore caricamento su {model_device_name_GPU} : {e}")
+    print(f"\nProvo a caricare il modello {model_name} su {model_device_name_CPU}...")
     pipe = ov_genai.LLMPipeline(model_path, "CPU")
-    print(f"Modello caricato correttamente su {model_device_name_CPU}")
+    print(f"\nModello caricato correttamente su {model_device_name_CPU}")
 
 while True :
     user_input = input("\nTu: ")
