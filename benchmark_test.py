@@ -1,13 +1,11 @@
 import openvino_genai as ov_genai
-import openvino as ov
 import time
 import os
 
 model_name = "Qwen2.5-7B-Instruct-int4-ov"
 model_path = os.path.abspath(f"../models/{model_name}")
 
-# Inizializzazione Pipeline
-print(f"--- Caricamento Jarvis sulla GPU ---")
+print(f"--- Caricamento Jarvis sulla GPU Arc B50 ---")
 pipe = ov_genai.LLMPipeline(model_path, "GPU")
 print("✅ Sistema pronto. Analisi Benchmark attiva.\n")
 
@@ -17,27 +15,36 @@ while True:
 
     print("\n🤖 Jarvis: ", end="", flush=True)
 
-    # Variabili per il Benchmark
-    tokens_count = 0
-    start_time = time.time()
+    # Usiamo una lista per aggirare il problema dello scope
+    stats = {"tokens": 0, "start_time": 0.0}
 
-    # Funzione streamer modificata per contare i token
     def custom_streamer(word):
-        nonlocal tokens_count
+        # Se è il primo token, segnamo il tempo esatto di inizio generazione
+        if stats["tokens"] == 0:
+            stats["start_time"] = time.time()
+        
         print(word, end="", flush=True)
-        tokens_count += 1
-        return False # Continua la generazione
+        stats["tokens"] += 1
+        return False 
+
+    # Avviamo il timer totale (incluso il tempo di "pensiero" iniziale)
+    overall_start = time.time()
 
     # Generazione
     pipe.generate(user_input, max_new_tokens=512, streamer=custom_streamer)
     
-    end_time = time.time()
-    duration = end_time - start_time
-    tps = tokens_count / duration if duration > 0 else 0
+    overall_end = time.time()
+    
+    # Calcoli
+    total_duration = overall_end - overall_start
+    # Tempo di generazione pura (dal primo all'ultimo token)
+    gen_duration = overall_end - stats["start_time"] if stats["start_time"] > 0 else 0
+    
+    tps = stats["tokens"] / gen_duration if gen_duration > 0 else 0
 
-    # Stampa dei risultati tecnici
     print(f"\n\n" + "═"*40)
     print(f"📊 BENCHMARK B50:")
-    print(f"⏱️  Tempo: {duration:.2f} sec")
-    print(f"🚀 Velocità: {tps:.2f} token/s")
+    print(f"⏱️  Tempo Totale: {total_duration:.2f} s")
+    print(f"🚀 Velocità Pura: {tps:.2f} token/s")
+    print(f"🔢 Token generati: {stats['tokens']}")
     print("═"*40)
