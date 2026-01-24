@@ -51,8 +51,6 @@ async def list_models():
         "data": [{"id": "jarvis"}]
     }
 
-@app.post("/v1/chat/completions")
-
 def stream_generator() :
         def ov_streamer(subword: str) :
             chunk = {
@@ -63,6 +61,7 @@ def stream_generator() :
             yield chunk
         yield "data: [DONE]\n\n"
 
+@app.post("/v1/chat/completions")
 async def chat(request: Request):
     data = await request.json()
     prompt = data["messages"][-1]["content"]
