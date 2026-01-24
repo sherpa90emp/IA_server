@@ -1,5 +1,7 @@
 import os
+import json
 from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 import openvino_genai as ov_genai
 import openvino as ov
 from huggingface_hub import snapshot_download
@@ -46,8 +48,7 @@ app = FastAPI()
 @app.get("/v1/models")
 async def list_models():
     return {
-        "object": "list",
-        "data": [{"id": "jarvis", "object": "model", "owned_by": "me"}]
+        "data": [{"id": "jarvis"}]
     }
 
 @app.post("/v1/chat/completions")
@@ -55,16 +56,17 @@ async def chat(request: Request):
     data = await request.json()
     prompt = data["messages"][-1]["content"]
     
-    output = pipe.generate(prompt, max_new_tokens=512)
-    
-    return {
-        "choices": [{
-            "message": {
-                "role": "assistant",
-                "content": output
+    def generate_stream() :
+        def ov_streamer(subword: str) :
+            chunk = {
+                "choices": [{"delta": {"content": subword}, "index": 0, "finish_reason": None}]
             }
-        }]
-    }
+            return f"data: {json.dumps(chunk)}\n\n"
+    for chunk in pipe.generate(prompt, max_new_tokens=512, streamer=ov_streamer):
+            yield chunk
+    yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(generate_stream(), media_type="text/event-stream")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
