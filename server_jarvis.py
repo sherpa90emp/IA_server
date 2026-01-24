@@ -52,21 +52,22 @@ async def list_models():
     }
 
 @app.post("/v1/chat/completions")
-async def chat(request: Request):
-    data = await request.json()
-    prompt = data["messages"][-1]["content"]
-    
-    def stream_generator() :
+
+def stream_generator() :
         def ov_streamer(subword: str) :
             chunk = {
                 "choices": [{"delta": {"content": subword}, "index": 0, "finish_reason": None}]
             }
             return f"data: {json.dumps(chunk)}\n\n"
-    for chunk in pipe.generate(prompt, max_new_tokens=512, streamer=ov_streamer):
+        for chunk in pipe.generate(prompt, max_new_tokens=512, streamer=ov_streamer):
             yield chunk
-    yield "data: [DONE]\n\n"
+        yield "data: [DONE]\n\n"
+
+async def chat(request: Request):
+    data = await request.json()
+    prompt = data["messages"][-1]["content"]
     
-    return StreamingResponse(stream_generator(), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(prompt), media_type="text/event-stream")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
