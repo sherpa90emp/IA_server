@@ -56,7 +56,7 @@ async def chat(request: Request):
     data = await request.json()
     prompt = data["messages"][-1]["content"]
     
-    def generate_stream() :
+    def stream_generator() :
         def ov_streamer(subword: str) :
             chunk = {
                 "choices": [{"delta": {"content": subword}, "index": 0, "finish_reason": None}]
@@ -66,7 +66,7 @@ async def chat(request: Request):
             yield chunk
     yield "data: [DONE]\n\n"
     
-    return StreamingResponse(generate_stream(), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(), media_type="text/event-stream")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
