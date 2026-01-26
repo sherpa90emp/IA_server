@@ -47,44 +47,47 @@ except Exception as e :
 
 app = FastAPI()
 
-def stream_generator(prompt) :
-    token_queue = Queue()
+model_lock = threading.Lock()
 
-    def ov_streamer(subword: str) :
-        token_queue.put(subword)
-        return False
+def stream_generator(prompt, max_new_tokens) :
+    with model_lock : 
+        token_queue = Queue()
+
+        def ov_streamer(subword: str) :
+            token_queue.put(subword)
+            return False
     
-    def run_generation() :
-        pipe.generate(prompt, max_new_tokens=512, streamer=ov_streamer) 
-        token_queue.put(None)
+        def run_generation() :
+            pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer) 
+            token_queue.put(None)
     
-    threading.Thread(target=run_generation).start()
+        threading.Thread(target=run_generation).start()
     
-    while True :
-        token = token_queue.get()
-        if token is None :
-            break
+        while True :
+            token = token_queue.get()
+            if token is None :
+                break
         
-        chunk = {
-            "choices": [{"delta": {"content": token}, "index": 0, "finish_reason": None}] 
-        }
-        yield f"data: {json.dumps(chunk)}\n\n"
+            chunk = {
+                "choices": [{"text": token, "delta": {"content": token}, "index": 0, "finish_reason": None}] 
+            }
+            yield f"data: {json.dumps(chunk)}\n\n"
     
-    yield "data: [DONE]\n\n"
+        yield "data: [DONE]\n\n"
     
 @app.post("/v1/chat/completions")
 async def chat(request: Request) :
     data = await request.json()
     prompt = data["messages"][-1]["content"]
     
-    return StreamingResponse(stream_generator(prompt), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(prompt, max_new_tokens=512), media_type="text/event-stream")
 
 @app.post("/v1/completions")
 async def completions(request: Request) :
     data = await request.json()
     prompt = data.get("prompt", "")
     
-    return StreamingResponse(stream_generator(prompt), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(prompt, max_new_tokens=64), media_type="text/event-stream")
 
 @app.get("/v1/models")
 async def list_models():
