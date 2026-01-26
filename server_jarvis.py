@@ -73,9 +73,16 @@ def stream_generator(prompt) :
     yield "data: [DONE]\n\n"
     
 @app.post("/v1/chat/completions")
-async def chat(request: Request):
+async def chat(request: Request) :
     data = await request.json()
     prompt = data["messages"][-1]["content"]
+    
+    return StreamingResponse(stream_generator(prompt), media_type="text/event-stream")
+
+@app.post("/v1/completions")
+async def completions(request: Request) :
+    data = await request.json()
+    prompt = data.get("prompt", "")
     
     return StreamingResponse(stream_generator(prompt), media_type="text/event-stream")
 
