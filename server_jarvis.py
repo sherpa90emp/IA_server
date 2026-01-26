@@ -1,5 +1,7 @@
 import os
 import json
+import threading
+from queue import Queue 
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import openvino_genai as ov_genai
@@ -45,28 +47,43 @@ except Exception as e :
 
 app = FastAPI()
 
-@app.get("/v1/models")
-async def list_models():
-    return {
-        "data": [{"id": "jarvis"}]
-    }
+def stream_generator(prompt) :
+    token_queue = Queue()
 
-def stream_generator() :
-        def ov_streamer(subword: str) :
-            chunk = {
-                "choices": [{"delta": {"content": subword}, "index": 0, "finish_reason": None}]
-            }
-            return f"data: {json.dumps(chunk)}\n\n"
-        for chunk in pipe.generate(prompt, max_new_tokens=512, streamer=ov_streamer):
-            yield chunk
-        yield "data: [DONE]\n\n"
-
+    def ov_streamer(subword: str) :
+        token_queue.put(subword)
+        return False
+    
+    def run_generation() :
+        pipe.generate(prompt, max_new_tokens=512, streamer=ov_streamer) 
+        token_queue.put(None)
+    
+    threading.Thread(target=run_generation).start()
+    
+    while True :
+        token = token_queue.get()
+        if token is None :
+            break
+        
+        chunk = {
+            "choices": [{"delta": {"content": token}, "index": 0, "finish_reason": None}] 
+        }
+        yield f"data: {json.dumps(chunk)}\n\n"
+    
+    yield "data: [DONE]\n\n"
+    
 @app.post("/v1/chat/completions")
 async def chat(request: Request):
     data = await request.json()
     prompt = data["messages"][-1]["content"]
     
     return StreamingResponse(stream_generator(prompt), media_type="text/event-stream")
+
+@app.get("/v1/models")
+async def list_models():
+    return {
+        "data": [{"id": "jarvis"}]
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
