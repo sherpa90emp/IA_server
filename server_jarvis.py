@@ -49,7 +49,7 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
-def stream_generator(prompt, max_new_tokens) :
+def stream_generator(prompt, max_new_tokens, is_chat=False) :
     with model_lock : 
         token_queue = Queue()
 
@@ -58,8 +58,10 @@ def stream_generator(prompt, max_new_tokens) :
             return False
     
         def run_generation() :
-            pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer) 
-            token_queue.put(None)
+            try :
+                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer)
+            finally : 
+                token_queue.put(None)
     
         threading.Thread(target=run_generation).start()
     
@@ -67,10 +69,15 @@ def stream_generator(prompt, max_new_tokens) :
             token = token_queue.get()
             if token is None :
                 break
-        
-            chunk = {
-                "choices": [{"text": token, "delta": {"content": token}, "index": 0, "finish_reason": None}] 
-            }
+
+            if is_chat :
+                chunk = {
+                    "choices": [{"delta": {"content": token}, "index": 0, "finish_reason": None}] 
+                }
+            else :
+                chunk = {
+                    "choices": [{"text": token, "index": 0, "finish_reason": None}] 
+                }
             yield f"data: {json.dumps(chunk)}\n\n"
     
         yield "data: [DONE]\n\n"
@@ -80,14 +87,14 @@ async def chat(request: Request) :
     data = await request.json()
     prompt = data["messages"][-1]["content"]
     
-    return StreamingResponse(stream_generator(prompt, max_new_tokens=512), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(prompt, max_new_tokens=512, is_chat=True), media_type="text/event-stream")
 
 @app.post("/v1/completions")
 async def completions(request: Request) :
     data = await request.json()
     prompt = data.get("prompt", "")
     
-    return StreamingResponse(stream_generator(prompt, max_new_tokens=64), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
 @app.get("/v1/models")
 async def list_models():
@@ -96,4 +103,4 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)     
