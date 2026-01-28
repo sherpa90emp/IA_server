@@ -83,6 +83,9 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                 if token is None :
                     break
 
+                if token.strip() in ["```python", "```", "python"] :
+                    continue
+            
                 if is_chat :
                     chunk = {
                         "choices": [{"delta": {"content": token}, "index": 0}] 
@@ -117,7 +120,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
+    fim_prompt = f"<|file_separator|><|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
 
     return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
