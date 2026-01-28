@@ -1,7 +1,8 @@
 import os
 import json
+import asyncio
 import threading
-from queue import Queue 
+from queue import Queue, Empty
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import openvino_genai as ov_genai
@@ -50,7 +51,13 @@ app = FastAPI()
 model_lock = threading.Lock()
 
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
-    with model_lock : 
+    
+    lock_acquired = model_lock.acquire(timeout=10)
+    if not lock_acquired :
+        yield f"data: {json.dumps({'error': 'GPU busy'})}\n\n"
+        return
+    
+    try :
         token_queue = Queue()
 
         def ov_streamer(subword: str) :
@@ -60,26 +67,29 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
         def run_generation() :
             try :
                 pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer)
+            except Exception as e :
+                print(f"Errore generazione: {e}")
             finally : 
                 token_queue.put(None)
     
         threading.Thread(target=run_generation).start()
     
         while True :
-            token = token_queue.get()
+            token = token_queue.get(timeout=5.0)
             if token is None :
                 break
 
             if is_chat :
                 chunk = {
-                    "choices": [{"delta": {"content": token}, "index": 0, "finish_reason": None}] 
+                    "choices": [{"delta": {"content": token}, "index": 0}] 
                 }
             else :
                 chunk = {
-                    "choices": [{"text": token, "index": 0, "finish_reason": None}] 
+                    "choices": [{"text": token, "index": 0}] 
                 }
             yield f"data: {json.dumps(chunk)}\n\n"
-    
+    finally :
+        model_lock.release()  
         yield "data: [DONE]\n\n"
     
 @app.post("/v1/chat/completions")
