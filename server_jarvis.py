@@ -51,9 +51,9 @@ model_lock = threading.Lock()
 
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
-    lock_acquired = model_lock.acquire(timeout=5)
+    lock_acquired = model_lock.acquire(blocking=False)
     if not lock_acquired :
-        yield f"data: {json.dumps({'error': 'GPU busy'})}\n\n"
+        yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
         return
     
     try :
@@ -88,6 +88,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                         "choices": [{"delta": {"content": token}, "index": 0}] 
                     }
                 else :
+                    print(f"Inviando token: {token}")
                     chunk = {
                         "choices": [{"text": token, "index": 0}] 
                     }
@@ -127,4 +128,4 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)     
+    uvicorn.run(app, host="0.0.0.0", port=8000)
