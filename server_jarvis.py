@@ -93,8 +93,11 @@ async def chat(request: Request) :
 async def completions(request: Request) :
     data = await request.json()
     prompt = data.get("prompt", "")
+    suffix = data.get("suffix", "")
     
-    return StreamingResponse(stream_generator(prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
+
+    return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
 @app.get("/v1/models")
 async def list_models():
