@@ -1,6 +1,5 @@
 import os
 import json
-import asyncio
 import threading
 from queue import Queue, Empty
 from fastapi import FastAPI, Request
@@ -52,15 +51,18 @@ model_lock = threading.Lock()
 
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
-    lock_acquired = model_lock.acquire(timeout=10)
+    lock_acquired = model_lock.acquire(timeout=5)
     if not lock_acquired :
         yield f"data: {json.dumps({'error': 'GPU busy'})}\n\n"
         return
     
     try :
         token_queue = Queue()
+        stop_event = threading.Event()
 
         def ov_streamer(subword: str) :
+            if stop_event.is_set() :
+                return True
             token_queue.put(subword)
             return False
     
@@ -72,22 +74,28 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
             finally : 
                 token_queue.put(None)
     
-        threading.Thread(target=run_generation).start()
+        thread = threading.Thread(target=run_generation)
+        thread.start()
     
-        while True :
-            token = token_queue.get(timeout=5.0)
-            if token is None :
-                break
+        try :
+            while True :
+                token = token_queue.get(timeout=5.0)
+                if token is None :
+                    break
 
-            if is_chat :
-                chunk = {
-                    "choices": [{"delta": {"content": token}, "index": 0}] 
-                }
-            else :
-                chunk = {
-                    "choices": [{"text": token, "index": 0}] 
-                }
-            yield f"data: {json.dumps(chunk)}\n\n"
+                if is_chat :
+                    chunk = {
+                        "choices": [{"delta": {"content": token}, "index": 0}] 
+                    }
+                else :
+                    chunk = {
+                        "choices": [{"text": token, "index": 0}] 
+                    }
+                yield f"data: {json.dumps(chunk)}\n\n"
+        except Empty :
+            stop_event.set()
+            print("Timeout generazione: nessun token ricevuto.")
+            raise
     finally :
         model_lock.release()  
         yield "data: [DONE]\n\n"
