@@ -9,7 +9,7 @@ import openvino as ov
 from huggingface_hub import snapshot_download
 import uvicorn
 
-model_name = "Qwen2.5-Coder-7B-Instruct-int4-ov"
+model_name = "Qwen2.5-Coder-1.5B-Instruct-int4-ov"
 model_path = f"../models/{model_name}"
 
 if not os.path.exists(model_path) :
@@ -124,4 +124,6 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)     
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+def generate()     
