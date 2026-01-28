@@ -1,7 +1,7 @@
 import os
 import json
 import threading
-from queue import Queue, Empty
+from queue import Queue
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import openvino_genai as ov_genai
@@ -92,11 +92,14 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                         "choices": [{"text": token, "index": 0}] 
                     }
                 yield f"data: {json.dumps(chunk)}\n\n"
-        except Empty :
+        except GeneratorExit :
             stop_event.set()
-            print("Timeout generazione: nessun token ricevuto.")
+            print("Client disconnesso, segnale di stop inviato.")
+            thread.join(timeout=1.0)
             raise
     finally :
+        stop_event.set()
+        thread.join(timeout=1.0)
         model_lock.release()  
         yield "data: [DONE]\n\n"
     
@@ -124,6 +127,4 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-def generate()     
+    uvicorn.run(app, host="0.0.0.0", port=8000)     
