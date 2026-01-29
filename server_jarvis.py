@@ -68,7 +68,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
         def run_generation() :
             try :
-                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer)
+                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer, do_sample=False, temperature=0.0)
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -83,7 +83,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                 if token is None :
                     break
 
-                if token.strip() in ["```python", "```", "python"] :
+                if token.strip() in ["```python", "```", "python", "<|fim_middle|>", "obj['middle_code']"] :
                     continue
             
                 if is_chat :
@@ -120,7 +120,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|file_separator|><|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
 
     return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
@@ -132,3 +132,4 @@ async def list_models():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
