@@ -68,7 +68,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
         def run_generation() :
             try :
-                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer, do_sample=False, temperature=0.0, stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fime_middle|>"])
+                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer, do_sample=False, temperature=0.0, stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>"])
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -133,3 +133,4 @@ async def list_models():
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+def generate()
