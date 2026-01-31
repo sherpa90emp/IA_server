@@ -68,7 +68,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
         def run_generation() :
             try :
-                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer, do_sample=False, temperature=0.0)
+                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer, do_sample=False, temperature=0.0, stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fime_middle|>"])
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
