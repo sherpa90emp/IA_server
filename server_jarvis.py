@@ -107,9 +107,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
         model_lock.release()  
         yield "data: [DONE]\n\n"
 
-# funzione per testa autocomplete
-
-def test_vittoria
+def test
     
 @app.post("/v1/chat/completions")
 async def chat(request: Request) :
@@ -124,7 +122,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"### File Content Before:\n{prompt}\n\n### File Content After:\n{suffix}\n\n### Task: Fill in the missing code Between Before and After. Provide ONLY the code, no explanations.\n\n### Missing Code:\n"
+    fim_prompt = f"Complete the following Python code. Output ONLY the code that should go between the prefix and suffix. Do not repeat the prefix or suffix.\n\nPREFIX:\n{prompt}\n\nSUFFIX:\n{suffix}\n\nCOMPLETION:"
 
     return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
