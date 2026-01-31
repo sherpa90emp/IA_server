@@ -120,7 +120,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
+    fim_prompt = f"<|file_sep|><|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
 
     return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
@@ -131,4 +131,4 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
