@@ -49,6 +49,8 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
+def 
+
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
     lock_acquired = model_lock.acquire(blocking=False)
@@ -74,7 +76,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                               do_sample=False,
                               num_beans=2, 
                               temperature=0.2, 
-                              stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>", "obj", "['middle_code']"])
+                              stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>", "obj", "['middle_code']", "<|im_end|>", "<tool_call>", "<think>", "import "])
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -97,6 +99,9 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                     is_thinking = False
                     continue
                 if is_thinking :
+                    continue
+
+                if "<tool_call>" in token or "</tool_call>" in token :
                     continue
 
                 if token.strip() in ["```python", "```", "python", "<|fim_middle|>", "obj", "['middle_code']", "middle_code", "['", "']", "###"] :
@@ -140,15 +145,16 @@ async def completions(request: Request) :
     suffix = data.get("suffix", "")
     
     fim_prompt = {
-        f"<|im_start|>system\nYou are a code completion engine. "
-        f"Output ONLY the code. No reasoning. No thinking.<|im_end|>\n"
+        f"<|im_start|>system\nYou are a raw text completion tool. "
+        f"DO NOT use <think>. DO NOT use <tool_call>. "
+        f"Output ONLY the characters that follow the prefix.<|im_end|>\n"
         f"<|im_start|>user\n{prompt}<|im_end|>\n"
-        f"<|im_start|>assistant\n<think>\nDone.\n</think>\n"
+        f"<|im_start|>assistant\n"
     }
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
-        max_new_tokens=64, 
+        max_new_tokens=32,
         is_chat=False), 
         media_type="text/event-stream")
 
