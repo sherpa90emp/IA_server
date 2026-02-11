@@ -68,7 +68,13 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
         def run_generation() :
             try :
-                pipe.generate(prompt, max_new_tokens=max_new_tokens, streamer=ov_streamer, do_sample=False, temperature=0.0, stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>", "obj", "['middle_code']"])
+                pipe.generate(prompt, 
+                              max_new_tokens=max_new_tokens, 
+                              streamer=ov_streamer, 
+                              do_sample=False,
+                              num_beans=2, 
+                              temperature=0.2, 
+                              stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>", "obj", "['middle_code']"])
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -122,7 +128,10 @@ async def chat(request: Request) :
     data = await request.json()
     prompt = data["messages"][-1]["content"]
     
-    return StreamingResponse(stream_generator(prompt, max_new_tokens=512, is_chat=True), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(prompt, 
+                                              max_new_tokens=512, 
+                                              is_chat=True), 
+                                              media_type="text/event-stream")
 
 @app.post("/v1/completions")
 async def completions(request: Request) :
@@ -130,9 +139,18 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|im_start|>system\nYou are a specialized code completion tool. Output ONLY the missing code. DO NOT THINK. DO NOT EXPLAIN. NO CONVERSATION. Just the code.<|im_end|>\n<|im_start|>user\nPrefix: {prompt}\nSuffix: {suffix}\nCompletion:<|im_end|>\n<|im_start|>assistant\n"
+    fim_prompt = {
+        f"<|im_start|>system\nYou are a code completion engine. "
+        f"Output ONLY the code. No reasoning. No thinking.<|im_end|>\n"
+        f"<|im_start|>user\n{prompt}<|im_end|>\n"
+        f"<|im_start|>assistant\n<think>\nDone.\n</think>\n"
+    }
 
-    return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
+    return StreamingResponse(stream_generator(
+        fim_prompt, 
+        max_new_tokens=64, 
+        is_chat=False), 
+        media_type="text/event-stream")
 
 @app.get("/v1/models")
 async def list_models():
