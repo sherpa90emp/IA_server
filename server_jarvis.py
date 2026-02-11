@@ -9,7 +9,7 @@ import openvino as ov
 from huggingface_hub import snapshot_download
 import uvicorn
 
-model_name = "Qwen2.5-Coder-1.5B-int4-ov"
+model_name = "Qwen3-1.7B-int4-ov"
 model_path = f"../models/{model_name}"
 
 if not os.path.exists(model_path) :
