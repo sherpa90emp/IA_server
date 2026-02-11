@@ -9,7 +9,7 @@ import openvino as ov
 from huggingface_hub import snapshot_download
 import uvicorn
 
-model_name = "Qwen2.5-Coder-1.5B-Instruct-int4-ov"
+model_name = "Qwen2.5-Coder-1.5B-int4-ov"
 model_path = f"../models/{model_name}"
 
 if not os.path.exists(model_path) :
@@ -107,8 +107,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
         model_lock.release()  
         yield "data: [DONE]\n\n"
 
-def test
-    
 @app.post("/v1/chat/completions")
 async def chat(request: Request) :
     data = await request.json()
@@ -122,7 +120,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"Complete the following Python code. Output ONLY the code that should go between the prefix and suffix. Do not repeat the prefix or suffix.\n\nPREFIX:\n{prompt}\n\nSUFFIX:\n{suffix}\n\nCOMPLETION:"
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
 
     return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
