@@ -78,10 +78,20 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
         thread.start()
     
         try :
+            is_thinking = False
             while True :
                 token = token_queue.get(timeout=5.0)
                 if token is None :
                     break
+
+                if "<think>" in token :
+                    is_thinking = True
+                    continue
+                if "</think>" in token :
+                    is_thinking = False
+                    continue
+                if is_thinking :
+                    continue
 
                 if token.strip() in ["```python", "```", "python", "<|fim_middle|>", "obj", "['middle_code']", "middle_code", "['", "']", "###"] :
                     continue
@@ -120,7 +130,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
+    fim_prompt = f"<|im_start|>system\nYou are a specialized code completion tool. Output ONLY the missing code. DO NOT THINK. DO NOT EXPLAIN. NO CONVERSATION. Just the code.<|im_end|>\n<|im_start|>user\nPrefix: {prompt}\nSuffix: {suffix}\nCompletion:<|im_end|>\n<|im_start|>assistant\n"
 
     return StreamingResponse(stream_generator(fim_prompt, max_new_tokens=64, is_chat=False), media_type="text/event-stream")
 
