@@ -86,7 +86,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
         try :
             is_thinking = False
             while True :
-                token = token_queue.get(timeout=10.0)
+                token = token_queue.get(timeout=5.0)
                 if token is None :
                     break
 
@@ -103,12 +103,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                     continue
 
                 if token.strip() in ["```python", "```", "python", "<|fim_middle|>", "obj", "['middle_code']", "middle_code", "['", "']", "###"] :
-                    continue
-
-                clean_token = token.strip()
-
-                if len(clean_token) > 5 and clean_token.lower() in suffix[:30].lower() :
-                    print(f"Token duplicato salvato: {token}")
                     continue
 
                 if is_chat :
@@ -149,13 +143,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = (
-        f"<|im_start|>system\nYou are a code completion tool. "
-        f"Provide the exact code to insert between the prefix and suffix. "
-        f"No talk, no thinking, just code.<|im_end|>\n"
-        f"<|im_start|>user\nPREFIX:\n{prompt}\nSUFFIX:\n{suffix}<|im_end|>\n"
-        f"<|im_start|>assistant\n"
-    )
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
@@ -171,4 +159,4 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
