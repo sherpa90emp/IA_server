@@ -49,7 +49,7 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
-def stream_generator(prompt, max_new_tokens, is_chat=False) :
+def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
     
     lock_acquired = model_lock.acquire(blocking=False)
     if not lock_acquired :
@@ -104,7 +104,11 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
 
                 if token.strip() in ["```python", "```", "python", "<|fim_middle|>", "obj", "['middle_code']", "middle_code", "['", "']", "###"] :
                     continue
-            
+
+                clean_token = token.strip()
+                if clean_token and (clean_token in prompt[-20:] or clean_token in suffix[:20]):
+                    continue
+
                 if is_chat :
                     chunk = {
                         "choices": [{"delta": {"content": token}, "index": 0}] 
@@ -133,7 +137,8 @@ async def chat(request: Request) :
     
     return StreamingResponse(stream_generator(prompt, 
                                               max_new_tokens=512, 
-                                              is_chat=True), 
+                                              is_chat=True,
+                                              suffix=""), 
                                               media_type="text/event-stream")
 
 @app.post("/v1/completions")
@@ -142,18 +147,19 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = {
-        f"<|im_start|>system\nYou are a raw text completion tool. "
-        f"DO NOT use <think>. DO NOT use <tool_call>. "
-        f"Output ONLY the characters that follow the prefix.<|im_end|>\n"
-        f"<|im_start|>user\n{prompt}<|im_end|>\n"
+    fim_prompt = (
+        f"<|im_start|>system\nYou are a code completion engine. "
+        f"Output ONLY the code that should be inserted between PREFIX and SUFFIX. "
+        f"Do not think. Do not repeat text.<|im_end|>\n"
+        f"<|im_start|>user\nPREFIX:\n{prompt}\nSUFFIX:\n{suffix}<|im_end|>\n"
         f"<|im_start|>assistant\n"
-    }
+    )
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
-        max_new_tokens=32,
-        is_chat=False), 
+        max_new_tokens=24,
+        is_chat=False,
+        suffix=suffix), 
         media_type="text/event-stream")
 
 @app.get("/v1/models")
