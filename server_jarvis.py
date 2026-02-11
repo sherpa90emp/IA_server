@@ -72,8 +72,8 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                               max_new_tokens=max_new_tokens, 
                               streamer=ov_streamer, 
                               do_sample=False,
-                              num_beans=2, 
-                              temperature=0.2, 
+                              num_beans=1, 
+                              temperature=0.0, 
                               stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>", "obj", "['middle_code']", "<|im_end|>", "<tool_call>", "<think>", "import "])
             except Exception as e :
                 print(f"Errore generazione: {e}")
@@ -106,7 +106,12 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                     continue
 
                 clean_token = token.strip()
-                if clean_token and (clean_token in prompt[-20:] or clean_token in suffix[:20]):
+
+                if not clean_token :
+                    continue
+
+                if clean_token and (clean_token in prompt[-50:] or clean_token in suffix[:50].lower()) :
+                    print(f"Token duplicato salvato: {token}")
                     continue
 
                 if is_chat :
@@ -149,15 +154,15 @@ async def completions(request: Request) :
     
     fim_prompt = (
         f"<|im_start|>system\nYou are a code completion engine. "
-        f"Output ONLY the code that should be inserted between PREFIX and SUFFIX. "
-        f"Do not think. Do not repeat text.<|im_end|>\n"
-        f"<|im_start|>user\nPREFIX:\n{prompt}\nSUFFIX:\n{suffix}<|im_end|>\n"
+        f"Your task: Fill the gap between PREFIX and SUFFIX.\n"
+        f"Rule: Output ONLY the code to insert. Stop as soon as you reach the SUFFIX code.<|im_end|>\n"
+        f"<|im_start|>user\nPREFIX:\n{prompt}\n\nINSERT HERE\n\nSUFFIX:\n{suffix}<|im_end|>\n"
         f"<|im_start|>assistant\n"
     )
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
-        max_new_tokens=24,
+        max_new_tokens=10,
         is_chat=False,
         suffix=suffix), 
         media_type="text/event-stream")
