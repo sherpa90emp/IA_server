@@ -92,13 +92,15 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
     
         def run_generation() :
             try :
-                pipe.generate(prompt, 
-                              max_new_tokens=max_new_tokens, 
-                              streamer=ov_streamer, 
-                              do_sample=False,
-                              num_beans=1, 
-                              temperature=0.1, 
-                              stop_strings=["<|endoftext|>", "<|file_sep|>", "<|im_end|>", "<tool_call>", "<think>"])
+                config = ov_genai.GenerationConfig()
+                config.max_new_tokens = max_new_tokens
+                config.do_sample = False
+                config.stop_token_ids = {151643, 151645,151664}
+                pipe.generate(
+                    prompt,
+                    config,
+                    streamer=ov_streamer
+                )
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -108,7 +110,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
         thread.start()
     
         try :
-            is_thinking = False
             while True :
                 try :
                     token = token_queue.get(timeout=5.0)
