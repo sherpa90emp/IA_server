@@ -97,7 +97,15 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
             try :
                 config = ov_genai.GenerationConfig()
                 config.max_new_tokens = max_new_tokens
-                config.do_sample = False
+
+                if not is_chat :
+                    config.do_sample = False
+                    config.temperature = 0.0
+                else :
+                    config.do_samples = True
+                    config.temperature = 0.7
+                    config.top_p = 0.9
+                config.stop_token_ids = {151643, 151645}
                 pipe.generate(
                     prompt,
                     config,
