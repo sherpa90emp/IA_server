@@ -1,21 +1,45 @@
 import os
 import json
 import threading
-from queue import Queue
+from queue import Queue, Empty
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import openvino_genai as ov_genai
 import openvino as ov
 from huggingface_hub import snapshot_download
+from optimum.intel.openvino import OVModelForCausalLM
+from transformers import AutoTokenizer
 import uvicorn
 
-model_name = "Qwen3-1.7B-int4-ov"
-model_path = f"../models/{model_name}"
+model_name = "Qwen/Qwen2.5-Coder-1.5B" 
+model_path = f"../models/{model_name.split('/')[-1]}-ov"    
 
 if not os.path.exists(model_path) :
-    print(f"\nScaricamento del modello {model_name} ottimizzato da Huggingface...")
-    snapshot_download(f"OpenVINO/{model_name}", local_dir=model_path)
-    print("\nDownload completato.")
+    if "OpenVINO" in model_name or "-ov" in model_name :
+        print(f"\nScaricamento del modello {model_name} ottimizzato da Huggingface...")
+        snapshot_download(model_name, local_dir=model_path)
+        print("\nDownload completato.")
+    else :
+        print(f"\nModello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
+        print(f"Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+        ov_model = OVModelForCausalLM.from_pretrained(
+            model_name,
+            export=True,
+            compile=False,
+            load_in_8bit=False,
+            quantization_config={
+                "bits": 4,
+                "sym": True,
+                "group_size": 128,
+                "ratio": 0.8
+            }    
+        )
+        ov_model.save_pretrained(model_path)
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer.save_pretrained(model_path)
+        print(f"Conversione completata. Modello salvato in: {model_path}")
+        del ov_model
 else :
     print(f"\nModello {model_name} già presente localmente. Procedo al caricamento...")
 
@@ -73,8 +97,8 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                               streamer=ov_streamer, 
                               do_sample=False,
                               num_beans=1, 
-                              temperature=0.0, 
-                              stop_tokens=["<|endoftext|>", "<|file_sep|>", "<|fim_middle|>", "<|fim_suffix|>", "<|fim_prefix|>", "obj", "['middle_code']", "<|im_end|>", "<tool_call>", "<think>", "import "])
+                              temperature=0.1, 
+                              stop_strings=["<|endoftext|>", "<|file_sep|>", "<|im_end|>", "<tool_call>", "<think>"])
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -86,23 +110,17 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
         try :
             is_thinking = False
             while True :
-                token = token_queue.get(timeout=5.0)
+                try :
+                    token = token_queue.get(timeout=5.0)
+                except Empty:
+                    if stop_event.is_set() :
+                        break
+                    continue
+
                 if token is None :
                     break
 
-                if "<think>" in token :
-                    is_thinking = True
-                    continue
-                if "</think>" in token :
-                    is_thinking = False
-                    continue
-                if is_thinking :
-                    continue
-
                 if any(tag in token for tag in ["<tool_call>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
-                    continue
-
-                if token.strip() in ["```python", "```", "python", "<|fim_middle|>", "obj", "['middle_code']", "middle_code", "['", "']", "###"] :
                     continue
 
                 if is_chat :
@@ -147,7 +165,7 @@ async def completions(request: Request) :
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
-        max_new_tokens=32,
+        max_new_tokens=64,
         is_chat=False,
         suffix=suffix), 
         media_type="text/event-stream")
