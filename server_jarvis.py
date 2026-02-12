@@ -24,7 +24,7 @@ if not os.path.exists(model_path) :
         print("\nDownload completato.")
     else :
         print(f"\nModello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
-        print(f"Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+        print("Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
         ov_model = OVModelForCausalLM.from_pretrained(
             model_name,
             export=True,
@@ -120,6 +120,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
         thread.start()
     
         try :
+            is_thinking = False
             while True :
                 try :
                     token = token_queue.get(timeout=5.0)
@@ -130,6 +131,17 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
 
                 if token is None :
                     break
+
+                if "<think>" in token :
+                    is_thinking = True
+                    continue
+                if "</think>" in token :
+                    is_thinking = False
+                    continue
+
+                if is_thinking :
+                    if is_chat :
+                        print(f"Pensiero nascosto", end="", flush=True)
 
                 if any(tag in token for tag in ["<tool_call>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
                     continue
