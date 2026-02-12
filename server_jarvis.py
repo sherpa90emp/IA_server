@@ -11,7 +11,7 @@ from optimum.intel.openvino import OVModelForCausalLM
 from transformers import AutoTokenizer
 import uvicorn
 
-model_name = "Qwen/Qwen2.5-Coder-1.5B" 
+model_name = "OpenVINO/Qwen3-Coder-1.7B-int4-ov" 
 model_path = f"../models/{model_name.split('/')[-1]}-ov"    
 
 if not os.path.exists(model_path) :
@@ -95,7 +95,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                 config = ov_genai.GenerationConfig()
                 config.max_new_tokens = max_new_tokens
                 config.do_sample = False
-                config.stop_token_ids = {151643, 151645,151664}
                 pipe.generate(
                     prompt,
                     config,
