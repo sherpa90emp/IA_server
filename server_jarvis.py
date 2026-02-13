@@ -184,13 +184,13 @@ async def completions(request: Request) :
     
     full_prompt = raw_prompt.replace("<fim_prefix>", "<|fim_prefix|>")
     full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_suffix|>")
-    full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_middle|>")
+    full_prompt = full_prompt.replace("<fim_middle>", "<|fim_middle|>")
     
     full_prompt = full_prompt.replace("<|fim_suffix|>\n<|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
     full_prompt = full_prompt.replace("<|fim_suffix|> <|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
-    print(f"Prompt modificato: {repr(raw_prompt)}")
+    print(f"Prompt modificato: {repr(full_prompt)}")
     return StreamingResponse(stream_generator(
-        raw_prompt, 
+        full_prompt, 
         max_new_tokens=64,
         is_chat=False), 
         media_type="text/event-stream")
