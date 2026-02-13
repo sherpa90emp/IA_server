@@ -180,12 +180,16 @@ async def chat(request: Request) :
 @app.post("/v1/completions")
 async def completions(request: Request) :
     data = await request.json()
-    prompt = data.get("prompt", "")
+    raw_prompt = data.get("prompt", "")
     
-    print(f"Contenuto prompt: {repr(prompt)}")
-    
+    full_prompt = raw_prompt.replace("<fim_prefix>", "<|fim_prefix|>")
+    full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_suffix|>")
+    full_prompt = full_prompt.replace("<fim_middle>", "<|fim_middle|>")
+    if full_prompt.endswith("<|fim_middle|>") :
+        pass
+    print(f"Prompt modificato: {repr(full_prompt)}")
     return StreamingResponse(stream_generator(
-        prompt, 
+        full_prompt, 
         max_new_tokens=64,
         is_chat=False), 
         media_type="text/event-stream")
