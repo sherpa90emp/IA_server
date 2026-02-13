@@ -101,10 +101,11 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                 if not is_chat :
                     config.do_sample = False
                     config.temperature = 0.0
+                    config.presence_penalty = 1.5
                 else :
                     config.do_samples = True
-                    config.temperature = 0.7
-                    config.top_p = 0.9
+                    config.temperature = 0.6
+                    config.top_p = 0.95
                 config.stop_token_ids = {151643, 151645}
                 pipe.generate(
                     prompt,
@@ -184,7 +185,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
