@@ -183,13 +183,19 @@ async def chat(request: Request) :
 @app.post("/v1/completions")
 async def completions(request: Request) :
     data = await request.json()
-    prompt = data.get("prompt", "")
-    suffix = data.get("suffix", "")
+    prompt_text = data.get("prompt", "")
+    suffix_text = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
+    prefix_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
+    suffix_ids = tokenizer.encode(suffix_text, add_special_tokens=False)
+    new_line = tokenizer.encode("\n", add_special_tokens=False)
+
+    fim_token_ids = [151659] + prefix_ids + [151660] + suffix_ids + [151661] + new_line
+
+    final_prompt = tokenizer.decode(fim_token_ids)
 
     return StreamingResponse(stream_generator(
-        fim_prompt, 
+        final_prompt, 
         max_new_tokens=64,
         is_chat=False,
         suffix=suffix), 
