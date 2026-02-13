@@ -177,7 +177,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = (f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n")
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
     
     return StreamingResponse(stream_generator(
         fim_prompt, 
