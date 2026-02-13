@@ -143,6 +143,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                 if is_thinking :
                     if is_chat :
                         print(f"Pensiero nascosto", end="", flush=True)
+                    continue
 
                 if any(tag in token for tag in ["<tool_call>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
                     continue
@@ -185,7 +186,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
+    fim_prompt = f"<|fim_prefix|># No thinking, code only\n{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
 
     return StreamingResponse(stream_generator(
         fim_prompt, 
@@ -201,4 +202,4 @@ async def list_models():
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
