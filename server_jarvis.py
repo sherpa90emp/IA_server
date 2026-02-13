@@ -200,7 +200,7 @@ async def completions(request: Request) :
         final_prompt, 
         max_new_tokens=64,
         is_chat=False,
-        suffix=suffix), 
+        suffix=suffix_text), 
         media_type="text/event-stream")
 
 @app.get("/v1/models")
