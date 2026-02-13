@@ -181,16 +181,16 @@ async def chat(request: Request) :
 async def completions(request: Request) :
     data = await request.json()
     raw_prompt = data.get("prompt", "")
-    #raw_suffix = data.get("suffix", "")
     
-    #clean_prefix = raw_prompt.replace("<fim_prefix>", "").replace("<|fim_prefix|>", "")
-    #clean_prefix = clean_prefix.split("<fim_suffix>")[0].split("<|fim_suffix|>")[0]
-    #clean_suffix = raw_suffix.replace("<fim_suffix>", "").replace("<|fim_middle|>", "")
+    full_prompt = raw_prompt.replace("<fim_prefix>", "<|fim_prefix|>")
+    full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_suffix|>")
+    full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_middle|>")
     
-    #full_prompt = f"<|fim_prefix|>{clean_prefix}<|fim_suffix|>{clean_suffix}<|fim_middle|>"
+    full_prompt = full_prompt.replace("<|fim_suffix|>\n<|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
+    full_prompt = full_prompt.replace("<|fim_suffix|> <|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
     print(f"Prompt modificato: {repr(raw_prompt)}")
     return StreamingResponse(stream_generator(
-        full_prompt, 
+        raw_prompt, 
         max_new_tokens=64,
         is_chat=False), 
         media_type="text/event-stream")
@@ -203,5 +203,3 @@ async def list_models():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-x = 
