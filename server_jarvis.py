@@ -11,7 +11,7 @@ from optimum.intel.openvino import OVModelForCausalLM
 from transformers import AutoTokenizer
 import uvicorn
 
-model_name = "OpenVINO/Qwen3-1.7B-int4-ov" 
+model_name = "OpenVINO/Qwen2.5-Coder-1.5B-Instruct-int4-ov" 
 if "-ov" in model_name :
     model_path = f"../models/{model_name.split('/')[-1]}"
 else :
@@ -123,7 +123,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
         thread.start()
     
         try :
-            is_thinking = False
             while True :
                 try :
                     token = token_queue.get(timeout=5.0)
@@ -134,18 +133,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
 
                 if token is None :
                     break
-
-                if "<think>" in token :
-                    is_thinking = True
-                    continue
-                if "</think>" in token :
-                    is_thinking = False
-                    continue
-
-                if is_thinking :
-                    if is_chat :
-                        print(f"Pensiero nascosto", end="", flush=True)
-                    continue
 
                 if any(tag in token for tag in ["<tool_call>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
                     continue
@@ -185,22 +172,16 @@ async def chat(request: Request) :
 @app.post("/v1/completions")
 async def completions(request: Request) :
     data = await request.json()
-    prompt_text = data.get("prompt", "")
-    suffix_text = data.get("suffix", "")
+    prompt = data.get("prompt", "")
+    suffix = data.get("suffix", "")
     
-    prefix_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
-    suffix_ids = tokenizer.encode(suffix_text, add_special_tokens=False)
-    new_line = tokenizer.encode("\n", add_special_tokens=False)
-
-    fim_token_ids = [151659] + prefix_ids + [151660] + suffix_ids + [151661] + new_line
-
-    final_prompt = tokenizer.decode(fim_token_ids)
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
 
     return StreamingResponse(stream_generator(
-        final_prompt, 
+        fim_prompt, 
         max_new_tokens=64,
         is_chat=False,
-        suffix=suffix_text), 
+        suffix=suffix), 
         media_type="text/event-stream")
 
 @app.get("/v1/models")
