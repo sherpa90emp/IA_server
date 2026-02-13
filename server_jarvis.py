@@ -65,7 +65,9 @@ for device in devices :
 try :
     print(f"\nProvo a caricare il modello {model_name} sulla {model_device_name_GPU} da {model_path}")
     pipe = ov_genai.LLMPipeline(model_path, target_device)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
     print(f"\nModello caricato correttamente su {model_device_name_GPU}")
+    print("Tokenizer caricato correttamente")
 except Exception as e :
     print(f"\nErrore caricamento su {model_device_name_GPU} : {e}")
     print(f"\nProvo a caricare il modello {model_name} su {model_device_name_CPU}...")
