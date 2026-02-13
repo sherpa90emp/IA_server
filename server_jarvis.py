@@ -136,8 +136,8 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                 if token is None :
                     break
 
-                if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
-                    continue
+                #if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
+                    #continue
 
                 if is_chat :
                     chunk = {
@@ -177,10 +177,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = (
-        f"# No thinking, just the code"
-        f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
-    )
+    fim_prompt = (f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n")
     return StreamingResponse(stream_generator(
         fim_prompt, 
         max_new_tokens=64,
@@ -196,3 +193,5 @@ async def list_models():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+x = 
