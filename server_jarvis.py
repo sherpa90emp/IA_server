@@ -143,7 +143,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                     continue
 
                 if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>", "repo_name"]):
-                    #continue
+                    continue
 
                 if is_chat :
                     chunk = {
@@ -183,6 +183,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
+    print(f"DEBUG - Prompt: {repr(prompt[:50])} ... Suffix: {repr(suffix[:50])}")
     fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
     
     return StreamingResponse(stream_generator(
