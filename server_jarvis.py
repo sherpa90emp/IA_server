@@ -67,7 +67,10 @@ for device in devices :
 try :
     print(f"\nProvo a caricare il modello {model_name} sulla {model_device_name_GPU} da {model_path}")
     pipe = ov_genai.LLMPipeline(model_path, target_device)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path,
+        trust_remote_code=True
+        )
     print(f"\nModello caricato correttamente su {model_device_name_GPU}")
     print("Tokenizer caricato correttamente")
 except Exception as e :
@@ -136,7 +139,10 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                 if token is None :
                     break
 
-                #if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>"]):
+                if "<|" in token or "|>" in token or "Alibaba Cloud" in token:
+                    continue
+
+                if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>", "repo_name"]):
                     #continue
 
                 if is_chat :
@@ -177,7 +183,7 @@ async def completions(request: Request) :
     prompt = data.get("prompt", "")
     suffix = data.get("suffix", "")
     
-    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>\n"
+    fim_prompt = f"<|fim_prefix|>{prompt}<|fim_suffix|>{suffix}<|fim_middle|>"
     
     return StreamingResponse(stream_generator(
         fim_prompt, 
