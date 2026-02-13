@@ -81,5 +81,3 @@ if __name__ == '__main__':
     print("====Finished=====")
     del ov_model
     del model_path
-    
-    

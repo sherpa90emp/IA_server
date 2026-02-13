@@ -8,10 +8,11 @@ import openvino_genai as ov_genai
 import openvino as ov
 from huggingface_hub import snapshot_download
 from optimum.intel.openvino import OVModelForCausalLM
+from optimum.exporters.openvino.convert import export_tokenizer
 from transformers import AutoTokenizer
 import uvicorn
 
-model_name = "OpenVINO/Qwen3-1.7B-int4-ov" 
+model_name = "Qwen/Qwen2.5-Coder-1.5B" 
 if "-ov" in model_name :
     model_path = f"../models/{model_name.split('/')[-1]}"
 else :
@@ -41,6 +42,7 @@ if not os.path.exists(model_path) :
 
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         tokenizer.save_pretrained(model_path)
+        export_tokenizer(tokenizer, model_path)
         print(f"Conversione completata. Modello salvato in: {model_path}")
         del ov_model
 else :
