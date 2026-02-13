@@ -11,7 +11,7 @@ from optimum.intel.openvino import OVModelForCausalLM
 from transformers import AutoTokenizer
 import uvicorn
 
-model_name = "OpenVINO/Qwen2.5-Coder-1.5B-Instruct-int4-ov" 
+model_name = "OpenVINO/Qwen3-1.7B-int4-ov" 
 if "-ov" in model_name :
     model_path = f"../models/{model_name.split('/')[-1]}"
 else :
