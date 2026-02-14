@@ -84,6 +84,8 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
+def sq
+
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
     lock_acquired = model_lock.acquire(blocking=False)
@@ -135,10 +137,12 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                 if token is None :
                     break
 
-                if "<|" in token or "|>" in token or "Alibaba Cloud" in token:
-                    continue
+                if any(s in token for s in ["README.md", "Copyright", "---", "repo_name", "/*", "*/"]):
+                    print(f"--- STOP: Rilevato tentativo di cambiare file ({token.strip()}) ---")
+                    stop_event.set()
+                    break
 
-                if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>", "repo_name"]):
+                if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "<think>"]):
                     continue
 
                 if is_chat :
@@ -177,18 +181,16 @@ async def chat(request: Request) :
 async def completions(request: Request) :
     data = await request.json()
     raw_prompt = data.get("prompt", "")
+    
+    full_prompt = re.sub(r'[\s\r\n]+<\|fim_middle\|>', '<|fim_middle|>', raw_prompt)
+
     #print(f"Prompt originale: {repr(raw_prompt)}")
     #print("---------------------------------------")
-    
-    #full_prompt = raw_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
-    #full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
-    #full_prompt = full_prompt.replace("\r\n<|fim_middle|>", "<|fim_middle|>")
-    full_prompt = re.sub(r'[\s\r\n]+<\|fim_middle\|>', '<|fim_middle|>', raw_prompt)
     #print(f"Prompt modificato: {repr(full_prompt)}")
     
     return StreamingResponse(stream_generator(
         full_prompt, 
-        max_new_tokens=16,
+        max_new_tokens=32, #tenere token bassi e debouncing a 100ms sembra possa facilitare l'autocompletamento
         is_chat=False), 
         media_type="text/event-stream")
 
