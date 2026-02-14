@@ -82,6 +82,7 @@ except Exception as e :
 app = FastAPI()
 
 model_lock = threading.Lock()
+ 
 
 def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
     
@@ -181,15 +182,18 @@ async def chat(request: Request) :
 async def completions(request: Request) :
     data = await request.json()
     raw_prompt = data.get("prompt", "")
-    
-    #full_prompt = raw_prompt.replace("<fim_prefix>", "<|fim_prefix|>")
-    #full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_suffix|>")
-    #full_prompt = full_prompt.replace("<fim_middle>", "<|fim_middle|>")
-    
-    #full_prompt = full_prompt.replace("<|fim_suffix|>\n<|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
-    #full_prompt = full_prompt.replace("<|fim_suffix|> <|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
-    #print(f"Prompt modificato: {repr(full_prompt)}")
     print(f"Prompt modificato: {repr(raw_prompt)}")
+    print("---------------------------------------")
+    full_prompt = raw_prompt.replace("\r\n<|fim_prefix>|", "<|fim_prefix|>")
+    full_prompt = full_prompt.replace("\n<|fim_suffix|>", "<|fim_suffix|>")
+    full_prompt = full_prompt.replace("<|fim_suffix|>\r\n", "<|fim_suffix|>")
+    full_prompt = full_prompt.replace("<|fim_middle|>\n", "<|fim_middle|>")
+    
+    full_prompt = full_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
+    full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
+    full_prompt = full_prompt.replace("\r\n<|fim_middle|>", "<|fim_middle|>")
+    print(f"Prompt modificato: {repr(full_prompt)}")
+    
     return StreamingResponse(stream_generator(
         full_prompt, 
         max_new_tokens=64,
