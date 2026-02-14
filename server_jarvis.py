@@ -83,6 +83,8 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
+def 
+
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
     lock_acquired = model_lock.acquire(blocking=False)
@@ -179,9 +181,10 @@ async def completions(request: Request) :
     print(f"Prompt originale: {repr(raw_prompt)}")
     print("---------------------------------------")
     
-    full_prompt = full_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
-    full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
-    full_prompt = full_prompt.replace("\r\n<|fim_middle|>", "<|fim_middle|>")
+    #full_prompt = raw_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
+    #full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
+    #full_prompt = full_prompt.replace("\r\n<|fim_middle|>", "<|fim_middle|>")
+    full_prompt = re.sub(r'[\s\r\n]+<\|fim_middle\|>', '<|fim_middle|>', raw_prompt)
     print(f"Prompt modificato: {repr(full_prompt)}")
     
     return StreamingResponse(stream_generator(
