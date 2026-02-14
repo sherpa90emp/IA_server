@@ -83,6 +83,7 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
+
 def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
     
     lock_acquired = model_lock.acquire(blocking=False)
@@ -144,14 +145,6 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
 
                 if any(tag in token for tag in ["<tool_call>", "<think>", "</tool_call>", "<|im_end|>", "<|file_sep|>", "repo_name"]):
                     continue
-
-                if "<|endoftext|>" in token or "<|file_separator|>" in token:
-                    stop_event.set()
-                    break
-
-                if "Copyright" in token or "Licensed under" in token:
-                    stop_event.set()
-                    break
 
                 if is_chat :
                     chunk = {
