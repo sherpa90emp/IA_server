@@ -182,13 +182,14 @@ async def completions(request: Request) :
     data = await request.json()
     raw_prompt = data.get("prompt", "")
     
-    full_prompt = raw_prompt.replace("<fim_prefix>", "<|fim_prefix|>")
-    full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_suffix|>")
-    full_prompt = full_prompt.replace("<fim_middle>", "<|fim_middle|>")
+    #full_prompt = raw_prompt.replace("<fim_prefix>", "<|fim_prefix|>")
+    #full_prompt = full_prompt.replace("<fim_suffix>", "<|fim_suffix|>")
+    #full_prompt = full_prompt.replace("<fim_middle>", "<|fim_middle|>")
     
-    full_prompt = full_prompt.replace("<|fim_suffix|>\n<|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
-    full_prompt = full_prompt.replace("<|fim_suffix|> <|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
-    print(f"Prompt modificato: {repr(full_prompt)}")
+    #full_prompt = full_prompt.replace("<|fim_suffix|>\n<|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
+    #full_prompt = full_prompt.replace("<|fim_suffix|> <|fim_middle|>", "<|fim_suffix|><|fim_middle|>")
+    #print(f"Prompt modificato: {repr(full_prompt)}")
+    print(f"Prompt modificato: {repr(raw_prompt)}")
     return StreamingResponse(stream_generator(
         full_prompt, 
         max_new_tokens=64,
