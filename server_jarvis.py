@@ -84,7 +84,7 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
-def sq
+def square
 
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
@@ -190,7 +190,7 @@ async def completions(request: Request) :
     
     return StreamingResponse(stream_generator(
         full_prompt, 
-        max_new_tokens=32, #tenere token bassi e debouncing a 100ms sembra possa facilitare l'autocompletamento
+        max_new_tokens=24, #tenere token bassi e debouncing a 100ms sembra possa facilitare l'autocompletamento
         is_chat=False), 
         media_type="text/event-stream")
 
