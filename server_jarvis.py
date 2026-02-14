@@ -83,8 +83,7 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
-
-def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
+def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
     lock_acquired = model_lock.acquire(blocking=False)
     if not lock_acquired :
@@ -113,13 +112,8 @@ def stream_generator(prompt, max_new_tokens, is_chat=False, suffix="") :
                 else :
                     config.do_samples = True
                     config.temperature = 0.6
-                    config.top_p = 0.95
-                config.stop_token_ids = {151643, 151645}
-                pipe.generate(
-                    prompt,
-                    config,
-                    streamer=ov_streamer
-                )
+
+                pipe.generate(prompt, config, streamer=ov_streamer)
             except Exception as e :
                 print(f"Errore generazione: {e}")
             finally : 
@@ -184,10 +178,10 @@ async def completions(request: Request) :
     raw_prompt = data.get("prompt", "")
     print(f"Prompt modificato: {repr(raw_prompt)}")
     print("---------------------------------------")
-    full_prompt = raw_prompt.replace("\r\n<|fim_prefix>|", "<|fim_prefix|>")
-    full_prompt = full_prompt.replace("\n<|fim_suffix|>", "<|fim_suffix|>")
-    full_prompt = full_prompt.replace("<|fim_suffix|>\r\n", "<|fim_suffix|>")
-    full_prompt = full_prompt.replace("<|fim_middle|>\n", "<|fim_middle|>")
+    #full_prompt = raw_prompt.replace("\r\n<|fim_prefix>|", "<|fim_prefix|>")
+    #full_prompt = full_prompt.replace("\n<|fim_suffix|>", "<|fim_suffix|>")
+    #full_prompt = full_prompt.replace("<|fim_suffix|>\r\n", "<|fim_suffix|>")
+    #full_prompt = full_prompt.replace("<|fim_middle|>\n", "<|fim_middle|>")
     
     full_prompt = full_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
     full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
