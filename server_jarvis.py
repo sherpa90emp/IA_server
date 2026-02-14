@@ -178,19 +178,15 @@ async def completions(request: Request) :
     raw_prompt = data.get("prompt", "")
     print(f"Prompt originale: {repr(raw_prompt)}")
     print("---------------------------------------")
-    #full_prompt = raw_prompt.replace("\r\n<|fim_prefix>|", "<|fim_prefix|>")
-    #full_prompt = full_prompt.replace("\n<|fim_suffix|>", "<|fim_suffix|>")
-    #full_prompt = full_prompt.replace("<|fim_suffix|>\r\n", "<|fim_suffix|>")
-    #full_prompt = full_prompt.replace("<|fim_middle|>\n", "<|fim_middle|>")
     
-    #full_prompt = full_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
-    #full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
-    #full_prompt = full_prompt.replace("\r\n<|fim_middle|>", "<|fim_middle|>")
-    #print(f"Prompt modificato: {repr(full_prompt)}")
+    full_prompt = full_prompt.replace(" <|fim_middle|>", "<|fim_middle|>")
+    full_prompt = full_prompt.replace("\n<|fim_middle|>", "<|fim_middle|>")
+    full_prompt = full_prompt.replace("\r\n<|fim_middle|>", "<|fim_middle|>")
+    print(f"Prompt modificato: {repr(full_prompt)}")
     
     return StreamingResponse(stream_generator(
-        raw_prompt, 
-        max_new_tokens=128,
+        full_prompt, 
+        max_new_tokens=64,
         is_chat=False), 
         media_type="text/event-stream")
 
