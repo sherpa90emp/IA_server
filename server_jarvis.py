@@ -84,8 +84,6 @@ app = FastAPI()
 
 model_lock = threading.Lock()
 
-def square
-
 def stream_generator(prompt, max_new_tokens, is_chat=False) :
     
     lock_acquired = model_lock.acquire(blocking=False)
