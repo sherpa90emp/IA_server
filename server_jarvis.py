@@ -55,6 +55,7 @@ def get_model_selection() :
                 else :
                     print(f"\nModello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
                     print("Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+
                     ov_model = OVModelForCausalLM.from_pretrained(
                         model_name,
                         export=True,
@@ -72,6 +73,7 @@ def get_model_selection() :
                     tokenizer = AutoTokenizer.from_pretrained(model_name)
                     tokenizer.save_pretrained(model_path)
                     export_tokenizer(tokenizer, model_path)
+                    
                     print(f"Conversione completata. Modello salvato in: {model_path}")
                     del ov_model
                 return model_name, model_path
