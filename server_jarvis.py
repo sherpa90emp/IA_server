@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import json
 import threading
@@ -13,41 +14,74 @@ from optimum.exporters.openvino.convert import export_tokenizer
 from transformers import AutoTokenizer
 import uvicorn
 
-model_name = "Qwen/Qwen2.5-Coder-1.5B" 
-if "-ov" in model_name :
-    model_path = f"../models/{model_name.split('/')[-1]}"
-else :
-    model_path = f"../models/{model_name.split('/')[-1]}-ov"
+def get_model_selection() :
+    try :
+        while True :
+            print("--------------------------------------------------")
+            print("Benvenuto nel programma di avvio del server Jarvis")
+            print("--------------------------------------------------")
 
-if not os.path.exists(model_path) :
-    if "OpenVINO" in model_name or "-ov" in model_name :
-        print(f"\nScaricamento del modello {model_name} ottimizzato da Huggingface...")
-        snapshot_download(model_name, local_dir=model_path)
-        print("\nDownload completato.")
-    else :
-        print(f"\nModello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
-        print("Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
-        ov_model = OVModelForCausalLM.from_pretrained(
-            model_name,
-            export=True,
-            compile=False,
-            load_in_8bit=False,
-            quantization_config={
-                "bits": 4,
-                "sym": True,
-                "group_size": 128,
-                "ratio": 0.8
-            }    
-        )
-        ov_model.save_pretrained(model_path)
+            print("Inserisci il modello che desideri usare (es: Qwen/Qwen2.5-Coder-1.5B): ")
+            print("Premendo INVIO verrà usato il modello predefinito. (Qwen2.5-Coder-1.5B)")
+            print("Scrivi EXIT per uscire.")
 
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        tokenizer.save_pretrained(model_path)
-        export_tokenizer(tokenizer, model_path)
-        print(f"Conversione completata. Modello salvato in: {model_path}")
-        del ov_model
-else :
-    print(f"\nModello {model_name} già presente localmente. Procedo al caricamento...")
+            user_input = input().strip()
+
+            if user_input.lower() == "exit" :
+                sys.exit(0)
+
+            if not user_input :
+                model_name = "Qwen/Qwen2.5-Coder-1.5B"
+            else :
+                model_name = user_input     
+
+            if "-ov" in model_name :
+                model_path = f"../models/{model_name.split('/')[-1]}"
+            else :
+                model_path = f"../models/{model_name.split('/')[-1]}-ov"
+
+            if not os.path.exists(model_path) :
+                print(f"Modello non trovato in {model_path}")
+                
+                confirm = input("Vuoi scaricarlo/esportarlo ora/ (s/n): ")
+                if confirm.lower() != 's' :
+                    print("Operazione annullata. Inserisci un altro modello.")
+                    continue
+                            
+                if "OpenVINO" in model_name or "-ov" in model_name :
+                    print(f"\nScaricamento del modello {model_name} ottimizzato da Huggingface...")
+                    snapshot_download(model_name, local_dir=model_path)
+                    print("\nDownload completato.")
+                else :
+                    print(f"\nModello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
+                    print("Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+                    ov_model = OVModelForCausalLM.from_pretrained(
+                        model_name,
+                        export=True,
+                        compile=False,
+                        load_in_8bit=False,
+                        fix_mistral_regex=True,
+                        quantization_config={
+                            "bits": 4,
+                            "sym": True,
+                            "group_size": 128,
+                            "ratio": 0.8
+                        }    
+                    )
+                    ov_model.save_pretrained(model_path)
+                    tokenizer = AutoTokenizer.from_pretrained(model_name)
+                    tokenizer.save_pretrained(model_path)
+                    export_tokenizer(tokenizer, model_path)
+                    print(f"Conversione completata. Modello salvato in: {model_path}")
+                    del ov_model
+                return model_name, model_path
+            else :
+                print(f"\nModello {model_name} già presente localmente. Procedo al caricamento...")
+                return model_name, model_path
+    except Exception as e :
+        print(f"Errore durante la selezione: {e}")
+
+model_name, model_path = get_model_selection()
 
 core = ov.Core()
 devices = core.available_devices
@@ -140,7 +174,7 @@ def stream_generator(prompt, max_new_tokens, is_chat=False) :
                     stop_event.set()
                     break
 
-                if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "<think>"]):
+                if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "<think>", "AlibabaCloud"]):
                     continue
 
                 if is_chat :
