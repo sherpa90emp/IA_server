@@ -17,19 +17,6 @@ def get_local_models():
     return sorted(local_models)
 
 def messaggio_iniziale(local_models): 
-    print("---------------------------------------------------------")
-    print("      _    ______    ______   __        __   _    _____  ")
-    print("     | |  |  __  |  |  __  |  \ \      / /  | |  |  ___| ")
-    print("     | |  | |  | |  | |__| |   \ \    / /   | |  | |___  ")
-    print("     | |  | |__| |  |    __|    \ \  / /    | |  |___  | ")
-    print("  _  | |  |  __  |  |  _ \       \ \/ /     | |      | | ")
-    print(" | |_| |  | |  | |  | | \ \       \  /      | |   ___| | ")
-    print(" |_____|  |_|  |_|  |_|  \_\       \/       |_|  |_____| ")
-    print("                                                         ")
-    print("---------------------------------------------------------")
-
-    print("\nBenvenuto nel programma di selezione della IA del server Jarvis per IDE")
-
     if local_models:
         print("\nModelli già presenti localmente:")
         for i, model in enumerate(local_models, 1):
@@ -37,10 +24,10 @@ def messaggio_iniziale(local_models):
 
     print("\nInserisci il numero o il nome del modello che desideri usare: ")
     print("\nPremendo INVIO verrà usato il modello predefinito. (Qwen2.5-Coder-1.5B)")
-    print("Scrivi EXIT per uscire.\n")
+    print("\nScrivi EXIT per uscire.\n")
 
 def messaggio_next_error():
-    print("Il modello selezionato non era presente nei repository di Huggingface.")
+    print("[ERROR] Il modello selezionato non era presente nei repository di Huggingface.")
     print("Inserire un modello corretto")
 
 def get_user_input(local_models):
@@ -57,26 +44,26 @@ def get_user_input(local_models):
             if 0 <= i < len(local_models):
                 return local_models[i]
             else:
-                print("Numero non valido, inserisci quello corretto")
+                print("[ERROR] Numero non valido, inserisci quello corretto")
 
         return user_input
 
 def check_and_prepare_model(model_name, model_path):
     if not os.path.exists(model_path) :
-        print(f"Modello non trovato in {model_path}")
+        print(f"[INFO] Modello non trovato in {model_path}")
         
         confirm = input("Vuoi scaricarlo/esportarlo ora/ (s/n): ")
         if confirm.lower() != 's' :
-            print("Operazione annullata. Inserisci un altro modello.")
+            print("[INFO] Operazione annullata. Inserisci un altro modello.")
             return None
                     
         if "OpenVINO" in model_name or "-ov" in model_name :
-            print(f"\nScaricamento del modello {model_name} ottimizzato da Huggingface...")
+            print(f"\n[INFO] Scaricamento del modello {model_name} ottimizzato da Huggingface...")
             snapshot_download(model_name, local_dir=model_path)
-            print("\nDownload completato.")
+            print("\n[SUCCESS] Download completato.")
         else :
-            print(f"\nModello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
-            print("Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+            print(f"\n[INFO] Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
+            print("[INFO] Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
 
             ov_model = OVModelForCausalLM.from_pretrained(
                 model_name,
@@ -96,11 +83,11 @@ def check_and_prepare_model(model_name, model_path):
             tokenizer.save_pretrained(model_path)
             export_tokenizer(tokenizer, model_path)
             
-            print(f"Conversione completata. Modello salvato in: {model_path}")
+            print(f"[SUCCESS] Conversione completata. Modello salvato in: {model_path}")
             del ov_model
         return model_name, model_path
     else :
-        print(f"\nModello {model_name} già presente localmente. Procedo al caricamento...")
+        print(f"\n[INFO] Modello {model_name} già presente localmente. Procedo al caricamento...")
         return model_name, model_path
 
 def get_model_selection() :
@@ -128,5 +115,5 @@ def get_model_selection() :
                 errore_rilevato = False
                 continue
         except Exception as e :
-            print(f"Errore durante la selezione del modello: {e}")
+            print(f"[ERROR] Errore durante la selezione del modello: {e}")
             errore_rilevato = True
