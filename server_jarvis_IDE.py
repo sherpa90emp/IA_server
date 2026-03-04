@@ -169,4 +169,4 @@ class JarvisServeIDE:
     def run_server_IDE(self, host="0.0.0.0", port=8000):
         self.load_hardware()
         print(f"\n[READY] Server Jarvis attivo su https://{host}:{port}")
-        uvicorn.run(app, host=host, port=port)
+        uvicorn.run(self.app, host=host, port=port)
