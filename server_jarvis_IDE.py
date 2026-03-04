@@ -78,7 +78,7 @@ class JarvisServeIDE:
                         config.temperature = 0.0
                         config.presence_penalty = 1.5
                     else :
-                        config.do_samples = True
+                        config.do_sample = True
                         config.temperature = 0.6
 
                     self.pipe.generate(prompt, config, streamer=ov_streamer)
