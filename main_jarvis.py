@@ -1,5 +1,5 @@
 from model_select_jarvis import get_model_selection
-from server_jarvis_IDE import JarvisServeIDE
+from server_jarvis_IDE import JarvisServerIDE
 
 def avvio_jarvis():
     print("---------------------------------------------------------")
@@ -22,6 +22,6 @@ if __name__ == "__main__":
     
     name, path = get_model_selection()
 
-    jarvis = JarvisServeIDE(name, path)
+    jarvis = JarvisServerIDE(name, path)
 
     jarvis.run_server_IDE()
