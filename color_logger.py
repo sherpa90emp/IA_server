@@ -1,6 +1,9 @@
-from colorama import init, Fore, Back, Style
+from colorama import init, Fore
 
 init(autoreset=True)
 
-class ColoriLog:
+class ColoreLog:
     errore = Fore.RED
+    reset = Fore.RESET
+    info = Fore.BLUE
+    warning = Fore.YELLOW
