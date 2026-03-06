@@ -3,7 +3,8 @@ from colorama import init, Fore
 init(autoreset=True)
 
 class ColoreLog:
-    errore = Fore.RED
-    reset = Fore.RESET
-    info = Fore.BLUE
-    warning = Fore.YELLOW
+    ERRORE = Fore.RED
+    RESET = Fore.RESET
+    INFO = Fore.BLUE
+    WARNING = Fore.YELLOW
+    SUCCESS = Fore.GREEN
