@@ -60,7 +60,7 @@ class JarvisServerIDE:
                     device=target_device
                 )
                 self.emb_tokenizer = AutoTokenizer.from_pretrained(self.emb_path)
-                print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Tokenizer caricato correttamente")
+                print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")
             
         except Exception as e :
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
