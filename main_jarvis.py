@@ -1,4 +1,5 @@
 from model_select_jarvis import get_model_selection
+from model_select_embedding import get_local_models_emb
 from server_jarvis_IDE import JarvisServerIDE
 
 def avvio_jarvis():
@@ -22,6 +23,8 @@ if __name__ == "__main__":
     
     name, path = get_model_selection()
 
-    jarvis = JarvisServerIDE(name, path)
+    name_emb, path_emb = get_local_models_emb()
+
+    jarvis = JarvisServerIDE(name, path, name_emb, path_emb)
 
     jarvis.run_server_IDE()
