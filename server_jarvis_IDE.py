@@ -182,7 +182,7 @@ class JarvisServerIDE:
                 "data": [{"id": "jarvis"}]
             }
 
-        @self.app.post("/v1/emb")
+        @self.app.post("/v1/embeddings")
         async def embeddings(request: Request):
             if self.emb_model is None:
                 return {"error": "Modello di embedding non caricato"}
