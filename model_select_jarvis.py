@@ -1,5 +1,6 @@
 import os
 import sys
+from color_logger import ColoreLog
 from huggingface_hub import snapshot_download
 from optimum.intel.openvino import OVModelForCausalLM
 from optimum.exporters.openvino.convert import export_tokenizer
@@ -27,7 +28,7 @@ def messaggio_iniziale(local_models):
     print("\nScrivi EXIT per uscire.\n")
 
 def messaggio_next_error():
-    print("[ERROR] Il modello selezionato non era presente nei repository di Huggingface.")
+    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.")
     print("Inserire un modello corretto")
 
 def get_user_input(local_models):
@@ -44,26 +45,26 @@ def get_user_input(local_models):
             if 0 <= i < len(local_models):
                 return local_models[i]
             else:
-                print("[ERROR] Numero non valido, inserisci quello corretto")
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto")
 
         return user_input
 
 def check_and_prepare_model(model_name, model_path):
     if not os.path.exists(model_path) :
-        print(f"[INFO] Modello non trovato in {model_path}")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
         
         confirm = input("Vuoi scaricarlo/esportarlo ora/ (s/n): ")
         if confirm.lower() != 's' :
-            print("[INFO] Operazione annullata. Inserisci un altro modello.")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.")
             return None
                     
         if "OpenVINO" in model_name or "-ov" in model_name :
-            print(f"\n[INFO] Scaricamento del modello {model_name} ottimizzato da Huggingface...")
+            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Scaricamento del modello {model_name} ottimizzato da Huggingface...")
             snapshot_download(model_name, local_dir=model_path)
-            print("\n[SUCCESS] Download completato.")
+            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Download completato.")
         else :
-            print(f"\n[INFO] Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
-            print("[INFO] Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
 
             ov_model = OVModelForCausalLM.from_pretrained(
                 model_name,
@@ -83,11 +84,11 @@ def check_and_prepare_model(model_name, model_path):
             tokenizer.save_pretrained(model_path)
             export_tokenizer(tokenizer, model_path)
             
-            print(f"[SUCCESS] Conversione completata. Modello salvato in: {model_path}")
+            print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}")
             del ov_model
         return model_name, model_path
     else :
-        print(f"\n[INFO] Modello {model_name} già presente localmente. Procedo al caricamento...")
+        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...")
         return model_name, model_path
 
 def get_model_selection() :
@@ -115,5 +116,5 @@ def get_model_selection() :
                 errore_rilevato = False
                 continue
         except Exception as e :
-            print(f"[ERROR] Errore durante la selezione del modello: {e}")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore durante la selezione del modello: {e}")
             errore_rilevato = True
