@@ -164,15 +164,16 @@ class JarvisServerIDE:
             data = await request.json()
             raw_prompt = data.get("prompt", "")
             
-            full_prompt = re.sub(r'[\s\r\n]+<\|fim_middle\|>', '<|fim_middle|>', raw_prompt)
+            #full_prompt = re.sub(r'[\s\r\n]+<\|fim_middle\|>', '<|fim_middle|>', raw_prompt)
 
             #print(f"Prompt originale: {repr(raw_prompt)}")
             #print("---------------------------------------")
             #print(f"Prompt modificato: {repr(full_prompt)}")
             
             return StreamingResponse(self.stream_generator(
-                full_prompt, 
-                max_new_tokens=24, #tenere token bassi e debouncing a 100ms sembra possa facilitare l'autocompletamento
+                raw_prompt,
+                #full_prompt, 
+                max_new_tokens=64, #tenere token bassi e debouncing a 100ms sembra possa facilitare l'autocompletamento
                 is_chat=False), 
                 media_type="text/event-stream")
 
@@ -180,9 +181,9 @@ class JarvisServerIDE:
         async def list_models():
             return {
                 "data": [{"id": "jarvis"}]
-            }
+            } 
 
-        @self.app.post("/v1/embeddings")
+        @self.app.post("/v1/embeddings") 
         async def embeddings(request: Request):
             if self.emb_model is None:
                 return {"error": "Modello di embedding non caricato"}
@@ -211,7 +212,7 @@ class JarvisServerIDE:
                 "model": self.emb_name,
                 "usage": {"prompt_tokens": 0, "total_tokens": 0}
             }
-
+        
     def run_server_IDE(self, host="0.0.0.0", port=8000):
         self.load_hardware()
         print(f"\n[READY] Server Jarvis attivo su https://{host}:{port}")
