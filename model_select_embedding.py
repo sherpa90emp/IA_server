@@ -2,6 +2,17 @@ import os
 from huggingface_hub import snapshot_download
 from color_logger import ColoreLog
 
+def conferma_uso_emb():
+    print(f"Vuoi utilizzare un modello di embedding? s/N")
+    user_input = input().strip().lower()
+
+    if user_input == "s":
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Procedo alla selezione dei modelli di embedding")
+        return get_local_models_emb()
+    else:
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modalità 'Solo Regole' attiva.")
+        return None, None
+
 def get_local_models_emb():
     model_dir = "../models"
     default_name = "Qwen3-Embedding-0.6B-int4-cw-ov"
