@@ -46,7 +46,6 @@ def get_user_input(local_models):
                 return local_models[i]
             else:
                 print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto")
-
         return user_input
 
 def check_and_prepare_model(model_name, model_path):
