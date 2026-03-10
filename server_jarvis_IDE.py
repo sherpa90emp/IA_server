@@ -166,7 +166,7 @@ class JarvisServerIDE:
             
             #full_prompt = re.sub(r'[\s\r\n]+<\|fim_middle\|>', '<|fim_middle|>', raw_prompt)
 
-            #print(f"Prompt originale: {repr(raw_prompt)}")
+            print(f"Prompt originale: {repr(raw_prompt)}")
             #print("---------------------------------------")
             #print(f"Prompt modificato: {repr(full_prompt)}")
             
