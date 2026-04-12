@@ -68,7 +68,7 @@ class JarvisServerIDE:
             self.pipe = ov_genai.LLMPipeline(self.model_path, "CPU")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_CPU}")     
 
-    def stream_generator(self, prompt, max_new_tokens, is_chat=False):
+    def stream_generator(self, prompt, max_new_tokens, is_chat=False, **kwargs):
         lock_acquired = self.model_lock.acquire(blocking=False)
         if not lock_acquired:
             yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
@@ -156,7 +156,7 @@ class JarvisServerIDE:
             return StreamingResponse(self.stream_generator(prompt, 
                                                     max_new_tokens=512, 
                                                     is_chat=True,
-                                                    suffix=""), 
+                                                    **data), 
                                                     media_type="text/event-stream")
 
         @self.app.post("/v1/completions")
