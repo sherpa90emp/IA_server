@@ -52,7 +52,7 @@ def check_and_prepare_model(model_name, model_path):
     if not os.path.exists(model_path) :
         print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
         
-        confirm = input("Vuoi scaricarlo/esportarlo ora/ (s/n): ")
+        confirm = input("Vuoi scaricarlo/esportarlo ora (s/n): ")
         if confirm.lower() != 's' :
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.")
             return None
