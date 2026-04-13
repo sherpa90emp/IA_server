@@ -107,6 +107,9 @@ class JarvisServerIDE:
             thread.start()
 
             try :
+                in_think_block = False
+                think_buffer = ""
+
                 while True :
                     try :
                         token = token_queue.get(timeout=5.0)
@@ -125,6 +128,23 @@ class JarvisServerIDE:
 
                     if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "<think>", "AlibabaCloud"]):
                         continue
+
+                    think_buffer += token
+
+                    if "<think>" in think_buffer:
+                        in_think_block = True
+                    
+                    if in_think_block:
+                        if "</think>" in think_buffer:
+                            after_think = think_buffer.split("</think>", 1)[-1]
+                            in_think_block = False
+                            think_buffer = ""
+                            if not after_think.strip():
+                                continue
+                            else:
+                                token = after_think
+                        else:
+                            continue        
 
                     if is_chat :
                         chunk = {
@@ -154,7 +174,7 @@ class JarvisServerIDE:
             prompt = data["messages"][-1]["content"]
             
             return StreamingResponse(self.stream_generator(prompt, 
-                                                    max_new_tokens=512, 
+                                                    max_new_tokens=4096, 
                                                     is_chat=True,
                                                     **data), 
                                                     media_type="text/event-stream")
