@@ -107,7 +107,7 @@ class JarvisServerIDE:
             thread.start()
 
             try :
-                in_think_block = False
+                found_and_think = False
                 think_buffer = ""
 
                 while True :
@@ -130,21 +130,16 @@ class JarvisServerIDE:
                     if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "AlibabaCloud"]):
                         continue
 
-                    think_buffer += token
-                    print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token ricevuto: {repr(token)} | in_think: {in_think_block} | buffer tail: {repr(think_buffer)}")
-
-                    if "<think>" in think_buffer:
-                        in_think_block = True
-                    
-                    if in_think_block:
+                    if not found_and_think:
+                        think_buffer += token
+                        print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token ricevuto: {repr(token)} | in_think: {found_and_think} | buffer tail: {repr(think_buffer)}")
                         if "</think>" in think_buffer:
+                            found_and_think = True
                             after_think = think_buffer.split("</think>", 1)[-1]
-                            in_think_block = False
                             think_buffer = ""
                             if not after_think.strip():
                                 continue
-                            else:
-                                token = after_think
+                            token = after_think
                         else:
                             continue        
 
