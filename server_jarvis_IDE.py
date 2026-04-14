@@ -121,10 +121,11 @@ class JarvisServerIDE:
                     if token is None :
                         break
 
-                    if any(s in token for s in ["README.md", "Copyright", "---", "repo_name", "/*", "*/"]):
-                        print(f"--- STOP: Rilevato tentativo di cambiare file ({token.strip()}) ---")
-                        stop_event.set()
-                        break
+                    if not is_chat :
+                        if any(s in token for s in ["README.md", "Copyright", "---", "repo_name", "/*", "*/"]):
+                            print(f"--- STOP: Rilevato tentativo di cambiare file ({token.strip()}) ---")
+                            stop_event.set()
+                            break
 
                     if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "AlibabaCloud"]):
                         continue
