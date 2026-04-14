@@ -168,7 +168,12 @@ class JarvisServerIDE:
         @self.app.post("/v1/chat/completions")
         async def chat(request: Request):
             data = await request.json()
-            prompt = data["messages"][-1]["content"]
+            messages = data.get("messages", [])
+            prompt = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
             
             return StreamingResponse(self.stream_generator(prompt, 
                                                     max_new_tokens=4096, 
