@@ -130,7 +130,6 @@ class JarvisServerIDE:
                         continue
 
                     think_buffer += token
-                    print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token ricevuto: {repr(token)} | in_think: {in_think_block} | buffer tail: {repr(think_buffer)}")
 
                     if "<think>" in think_buffer:
                         in_think_block = True
