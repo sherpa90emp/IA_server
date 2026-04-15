@@ -2,4 +2,4 @@
 name: IA Server Rule
 ---
 
-Always respond in italian
+Respond ALWAYS and ONLY in Italian, regardless of the language of the question. This is mandatory.
