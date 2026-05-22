@@ -105,10 +105,10 @@ def formatta_meteo(dati: dict) -> str:
     """
     return (
         f"Meteo attuale per {dati['citta']}:\n"
-        f"  Condizioni:   {dati['descrizione']}\n"
-        f"  Temperatura:  {dati['temperatura']}°C (percepita {dati['temperatura_apparente']}°C)\n"
+        f"  Condizioni:          {dati['descrizione']}\n"
+        f"  Temperatura:         {dati['temperatura']}°C (percepita {dati['temperatura_apparente']}°C)\n"
         f"  Precipitazioni:      {dati['precipitazioni']}%\n"
-        f"  Vento:        {dati['velocita_vento']} km/h"
+        f"  Vento:               {dati['velocita_vento']} km/h"
     )
  
  
