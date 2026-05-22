@@ -127,7 +127,7 @@ class JarvisServerIDE:
                             stop_event.set()
                             break
 
-                    if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "<tool_call>", "AlibabaCloud"]):
+                    if any(tag in token for tag in ["<|", "|>", "Alibaba Cloud", "AlibabaCloud"]):
                         continue
 
                     if not found_and_think:
