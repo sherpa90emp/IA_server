@@ -103,9 +103,9 @@ def get_model_selection() :
         model_name = get_user_input(models_disponibili)
 
         if "-ov" in model_name :
-            model_path = f"../models/{model_name.split('/')[-1]}"
+            model_path = f"/home/andrea/models/{model_name.split('/')[-1]}"
         else :
-            model_path = f"../models/{model_name.split('/')[-1]}-ov"
+            model_path = f"/home/andrea/models/{model_name.split('/')[-1]}-ov"
 
         try :
             result = check_and_prepare_model(model_name, model_path)
