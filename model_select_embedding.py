@@ -14,7 +14,7 @@ def conferma_uso_emb():
         return None, None
 
 def get_local_models_emb():
-    model_dir = "../models"
+    model_dir = "/home/andrea/models"
     default_name = "Qwen3-Embedding-0.6B-int4-cw-ov"
     repo_id = f"OpenVINO/{default_name}"
 

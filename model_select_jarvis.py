@@ -7,7 +7,7 @@ from optimum.exporters.openvino.convert import export_tokenizer
 from transformers import AutoTokenizer
 
 def get_local_models():
-    models_dir = "../models"
+    models_dir = "/home/andrea/models"
     if not os.path.exists(models_dir):
         return []
     
