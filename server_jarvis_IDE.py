@@ -11,6 +11,7 @@ from transformers import AutoTokenizer
 from optimum.intel import OVModelForFeatureExtraction
 import uvicorn
 from color_logger import ColoreLog
+from tools import TOOL_REGISTRY, execute_tool, get_schemas
 
 class JarvisServerIDE:
     def __init__(self, model_name, model_path, emb_name, emb_path):
@@ -68,7 +69,66 @@ class JarvisServerIDE:
             self.pipe = ov_genai.LLMPipeline(self.model_path, "CPU")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_CPU}")     
 
-    def stream_generator(self, prompt, max_new_tokens, is_chat=False, **kwargs):
+    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool) -> str:
+        """
+        Esegue la generazione e restituisce l'output completo come stringa.
+        Non effettua streaming verso il client.
+        Presuppone che il lock sia già acquisito dal chiamante.
+ 
+        Args:
+            prompt:         Prompt già formattato da apply_chat_template.
+            max_new_tokens: Limite token da generare.
+            is_chat:        True per chat (sampling), False per completions (greedy).
+ 
+        Returns:
+            Output grezzo completo del modello (incluso eventuale blocco <think>).
+        """
+        token_queue = Queue()
+        stop_event = threading.Event()
+
+        def ov_streamer(subword: str) -> bool:
+            if stop_event.is_set() :
+                return True
+            token_queue.put(subword)
+            return False
+        
+        def run_generation():
+            try:
+                config = ov_genai.GenerationConfig()
+                config.max_new_tokens = max_new_tokens
+
+                if not is_chat:
+                    config.do_sample = False
+                    config.temperature = 0.0
+                    config.presence_penalty = 1.5
+                else:
+                    config.do_sample = True
+                    config.temperature = 0.6
+
+                self.pipe.generate(prompt, config, streamer=ov_streamer)
+            except Exception as e:
+                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore generazione: {e}")
+            finally:
+                token_queue.put(None)
+        
+        thread = threading.Thread(target=run_generation)
+        thread.start()
+
+        output = ""
+        while True:
+            try:
+                token = token_queue.get(timeout=5.0)
+            except Empty:
+                continue
+            if token is None:
+                break
+            output += token
+
+        thread.join()
+
+        return output
+    
+    def stream_generator(self, prompt: str, max_new_tokens: int, is_chat=False, **kwargs):
         lock_acquired = self.model_lock.acquire(blocking=False)
         if not lock_acquired:
             yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
@@ -164,22 +224,102 @@ class JarvisServerIDE:
             self.model_lock.release()  
             yield "data: [DONE]\n\n"
 
+    def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int):
+        """
+        Gestisce il ciclo completo di tool calling:
+        1. Genera l'output completo (senza streaming).
+        2. Se contiene <tool_call>: esegue il tool, reinserisce il risultato e rigenera.
+        3. Alla fine, invia la risposta pulita in streaming al client.
+ 
+        Supporta fino a 3 chiamate tool consecutive prima di forzare la risposta finale.
+ 
+        Args:
+            messages:       Lista messaggi OpenAI-format (per ricostruire il prompt).
+            prompt:         Prompt iniziale già formattato con gli schemi tool.
+            max_new_tokens: Limite token per ogni generazione.
+        """
+        lock_acquired = self.model_lock.acquire(blocking=False)
+        if not lock_acquired:
+            yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
+            return
+
+        try:
+            current_message = list(message)
+            current_prompt = prompt
+            MAX_TOOL_CALLS = 3
+
+            for attempt in range (MAX_TOOL_CALLS + 1):
+                raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
+
+                clean_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
+
+                tool_match = re.search(r"<tool_call>(.*?)</tool_call>", clean_output, flags=re.DOTALL)
+
+                if tool_match and attempt < MAX_TOOL_CALLS:
+                    tool_json_str = tool_match.group(1).strip()
+
+                    try:
+                        tool_data = json.loads(tool_json_str)
+                        name = tool_data.get("name")
+                        arguments = tool_data.get("arguments", {})
+
+                        print(f"{ColoreLog.INFO}[TOOL]{ColoreLog.RESET} Chiamata {name} ({arguments})")
+                        result = execute_tool(name, arguments)
+                        print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET} Risultato: {result[:120]}")
+
+                        current_message.append({"role": "assistant", "content": raw_output})
+                        current_message.append({"role": "tool", "content": result, "name": name})
+
+                        current_prompt = self.tokenizer.apply_chat_template(
+                            current_message,
+                            tokenize=False,
+                            add_generation_prompt=True
+                        )
+                        continue
+                    except (json.JSONDecodeError, Exception) as e:
+                        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore parsing tool call: {e}")
+                
+                final_text = re.sub(r"<[^>]+>", "", clean_output).strip()
+
+                chunk = {"choices": [{"delta": {"content": final_text}, "index": 0}]}
+
+                yield f"data: {json.dumps(chunk)}\n\n"
+                break
+        finally:
+            self.model_lock.release()
+            yield "data: [DONE]\n\n"    
+
     def _setup_routes(self):
         @self.app.post("/v1/chat/completions")
         async def chat(request: Request):
             data = await request.json()
             messages = data.get("messages", [])
+            schemas = get_schemas()
             prompt = self.tokenizer.apply_chat_template(
                 messages,
+                tools=schemas if schemas else None,
                 tokenize=False,
                 add_generation_prompt=True
             )
             
-            return StreamingResponse(self.stream_generator(prompt, 
-                                                    max_new_tokens=4096, 
-                                                    is_chat=True,
-                                                    **data), 
-                                                    media_type="text/event-stream")
+            if schemas:
+                return StreamingResponse(
+                    self.tool_stream_generator(
+                        messages,
+                        prompt,
+                        max_new_tokens=4096
+                    ),
+                    media_type="text/event-stream"
+                )
+            else:
+                return StreamingResponse(
+                    self.stream_generator(
+                        prompt, 
+                        max_new_tokens=4096, 
+                        is_chat=True,
+                        **data
+                        ), 
+                        media_type="text/event-stream")
 
         @self.app.post("/v1/completions")
         async def completions(request: Request):
