@@ -129,6 +129,10 @@ class JarvisServerIDE:
         return output
     
     def stream_generator(self, prompt: str, max_new_tokens: int, is_chat=False, **kwargs):
+
+        max_new_tokens = kwargs.get("max_new_tokens", max_new_tokens)
+        print(f"{ColoreLog.DEBUG}[STREAM]{ColoreLog.RESET} max_new_tokens={max_new_tokens} | kwargs keys={list(kwargs.keys())}")
+
         lock_acquired = self.model_lock.acquire(blocking=False)
         if not lock_acquired:
             yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
