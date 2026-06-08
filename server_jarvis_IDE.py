@@ -249,14 +249,18 @@ class JarvisServerIDE:
             MAX_TOOL_CALLS = 3
 
             for attempt in range (MAX_TOOL_CALLS + 1):
+                print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS + 1} — generazione in corso...")
                 raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
+                print(f"{ColoreLog.DEBUG}[TOOL_STREAM]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
 
                 clean_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
+                print(f"{ColoreLog.DEBUG}[TOOL_STREAM]{ColoreLog.RESET} Clean output dopo rimozione <think>: {repr(clean_output[:200])}")
 
                 tool_match = re.search(r"<tool_call>(.*?)</tool_call>", clean_output, flags=re.DOTALL)
 
                 if tool_match and attempt < MAX_TOOL_CALLS:
                     tool_json_str = tool_match.group(1).strip()
+                    print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tool call rilevata: {repr(tool_json_str[:200])}")
 
                     try:
                         tool_data = json.loads(tool_json_str)
@@ -279,11 +283,17 @@ class JarvisServerIDE:
                     except (json.JSONDecodeError, Exception) as e:
                         print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore parsing tool call: {e}")
                 
-                final_text = re.sub(r"<[^>]+>", "", clean_output).strip()
+                final_text = re.sub(r"<\|[^|]*\|+>", "", clean_output).strip()
+                final_text = re.sub(r"<tool_call>.*?</tool_call>", "", final_text, flags=re.DOTALL).strip()
+                final_text = re.sub(r"<tool_response>.*?</tool_response>", "", final_text, flags=re.DOTALL).strip()
 
-                chunk = {"choices": [{"delta": {"content": final_text}, "index": 0}]}
+                print(f"{ColoreLog.SUCCESS}[TOOL_STREAM]{ColoreLog.RESET} Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
 
-                yield f"data: {json.dumps(chunk)}\n\n"
+                CHUNK_SIZE = 20
+                for i in range(0, len(final_text), CHUNK_SIZE):
+                    chunk_text = final_text[i:i + CHUNK_SIZE]
+                    chunk = {"choices": [{"delta": {"content": chunk_text}, "index": 0}]}
+                    yield f"data: {json.dumps(chunk)}\n\n"
                 break
         finally:
             self.model_lock.release()
@@ -294,7 +304,10 @@ class JarvisServerIDE:
         async def chat(request: Request):
             data = await request.json()
             messages = data.get("messages", [])
-            schemas = get_schemas()
+            
+            client_wants_tools = data.get("tools") or data.get("tool_choice")
+            schemas = get_schemas() if client_wants_tools else None
+
             prompt = self.tokenizer.apply_chat_template(
                 messages,
                 tools=schemas if schemas else None,
