@@ -6,7 +6,7 @@ FILE_DIR = "/home/andrea/file_IA"
 
 def get_all_files(subdir=None):
     if not os.path.exists(FILE_DIR):
-        print f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path inesistente."
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path inesistente.")
         return []
 
     if subdir is None:
@@ -18,16 +18,18 @@ def get_all_files(subdir=None):
     else:
         file_subdir = os.path.join(FILE_DIR, subdir)
         if not os.path.exists(file_subdir):
-            print f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path subdir inesistente."
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path subdir inesistente.")
             return []
         else:
-            file_subdir_list = [
+            file_list = [
                 f for f in os.listdir(file_subdir)
                 if os.path.isfile(os.path.join(file_subdir, f))
             ]
-            return sorted(file_subdir_list)
+            return sorted(file_list)
 
-def search_file(filename, file_list, subdir=None):
+def search_file(filename, subdir=None):
+    file_list = get_all_files(subdir)
+
     if filename in file_list:
         if subdir is None:
             return os.path.join(FILE_DIR, filename)
