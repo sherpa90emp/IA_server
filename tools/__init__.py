@@ -1,4 +1,5 @@
 from tools.meteo import get_meteo, formatta_meteo
+from tools.search_file import search_file
 from color_logger import ColoreLog
 
 # Registry centrale: nome_tool → { func, schema }
@@ -38,6 +39,9 @@ def execute_tool(name: str, arguments: dict) -> str:
             if "temperatura" in result:
                 return formatta_meteo(result)
             return str(result)
+        elif isinstance(result, list):
+            result_list = "File trovato:\n" + "\n".join(result)
+            return result_list
         return str(result)
     except Exception as e:
         return f"Errore esecuzione tool '{name}': {e}"
@@ -72,6 +76,32 @@ register_tool(
                     }
                 },
                 "required": ["citta"]
+            }
+        }
+    }
+)
+
+register_tool(
+    name="search_file",
+    func=search_file,
+    schema={
+        "type": "function",
+        "function": {
+            "name": "search_file",
+            "description": "Recupera un file specifico o un gruppo di file simili all'interno di una dir specifica",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "description": "Nome del file, es. 'riassunto_video.txt', 'dati.txt'"
+                    },
+                    "subdir": {
+                        "type": "string",
+                        "description": "Nome della subdir, può essere None"
+                    },
+                },
+                "required": ["filename"]
             }
         }
     }
