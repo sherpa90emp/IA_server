@@ -37,8 +37,16 @@ def search_file(filename, subdir=None):
             file_subdir = os.path.join(FILE_DIR, subdir)
             return os.path.join(file_subdir, filename)    
     else:
-        return difflib.get_close_matches(filename, file_list, cutoff=0.6)                
-        
+        return difflib.get_close_matches(filename, file_list, cutoff=0.6)
+
+def read_file(file_path):
+    if not os.path.exists(file_path):
+        return "Path inesistente."
+    else:    
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            return content
+
 def print_file_list(file_list):
     if file_list :
         print("\nFile presenti: ")
