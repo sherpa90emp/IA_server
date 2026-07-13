@@ -1,5 +1,5 @@
 from tools.meteo import get_meteo, formatta_meteo
-from tools.search_file import search_file
+from tools.lettura_file import search_file, read_file, mod_file
 from color_logger import ColoreLog
 
 # Registry centrale: nome_tool → { func, schema }
@@ -102,6 +102,54 @@ register_tool(
                     },
                 },
                 "required": ["filename"]
+            }
+        }
+    }
+)
+
+register_tool(
+    name="read_file",
+    func=read_file,
+    schema={
+        "type": "function",
+        "function": {
+            "name": "read_file",
+            "description": "Legge il contenuto di un file specifico fornito come argomento. Da utilizzare sempre prima di chiamare mod_file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Percorso del file, es. '/path/to/file.txt'"
+                    },
+                },
+                "required": ["file_path"]
+            }
+        }
+    }
+)
+
+register_tool(
+    name="mod_file",
+    func=mod_file,
+    schema={
+        "type": "function",
+        "function": {
+            "name": "mod_file",
+            "description": "Modifica il contenuto di un file specifico fornito come argomento sulla base del contenuto fornito come argomento. IMPORTANTE: prima di chiamare questo metodo e modificare il file, e' necessario chiedere la CONFERMA all'utente.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Percorso del file, es. '/path/to/file.txt'"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Contenuto del file."
+                    },
+                },
+                "required": ["file_path", "content"]
             }
         }
     }
