@@ -8,27 +8,34 @@ from fastapi.responses import StreamingResponse
 import openvino_genai as ov_genai
 import openvino as ov
 from transformers import AutoTokenizer
-from optimum.intel import OVModelForFeatureExtraction
 import uvicorn
 from color_logger import ColoreLog
 from tools import TOOL_REGISTRY, execute_tool, get_schemas
 
 class JarvisServerIDE:
-    def __init__(self, model_name, model_path, emb_name, emb_path):
+    # Inizializza il server con modello e configurazioni base
+    def __init__(self, model_name, model_path):
         self.model_name = model_name
         self.model_path = model_path
-        self.emb_name = emb_name
-        self.emb_path = emb_path
 
         self.app = FastAPI()
         self.model_lock = threading.Lock()
         self.pipe = None
-        self.emb_model = None
         self.tokenizer = None
 
         self._setup_routes()
 
+    # Carica il modello sul dispositivo hardware disponibile (priorità GPU)
     def load_hardware(self):
+        """
+        Carica il modello LLM sul dispositivo hardware disponibile (priorità GPU > CPU).
+        1. Identifica i dispositivi OpenVINO disponibili (GPU Arc B50, CPU).
+        2. Tenta di caricare il modello sulla GPU; in caso di fallimento, ricade sulla CPU.
+        3. Utilizza il logger colorato per segnalare lo stato del caricamento.
+
+        Nota: Il modello viene caricato tramite `LLMPipeline` con il percorso specificato,
+        utilizzando la tokenizzazione da `AutoTokenizer` per il modello selezionato.
+        """
         core = ov.Core()
         devices = core.available_devices
 
@@ -52,23 +59,14 @@ class JarvisServerIDE:
                 self.model_path,
                 trust_remote_code=True
                 )
-            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")
-            
-            if self.emb_path and os.path.exists(self.emb_path):
-                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Caricamento modello Embedding {self.emb_name}")
-                self.emb_model = OVModelForFeatureExtraction.from_pretrained(
-                    self.emb_path,
-                    device=target_device
-                )
-                self.emb_tokenizer = AutoTokenizer.from_pretrained(self.emb_path)
-                print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")
-            
+            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")            
         except Exception as e :
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} su {model_device_name_CPU}...")
             self.pipe = ov_genai.LLMPipeline(self.model_path, "CPU")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_CPU}")     
 
+    # Esegue generazione non-streaming del modello
     def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool) -> str:
         """
         Esegue la generazione e restituisce l'output completo come stringa.
@@ -128,8 +126,21 @@ class JarvisServerIDE:
 
         return output
     
+    # Genera output in streaming con controllo token
     def stream_generator(self, prompt: str, max_new_tokens: int, is_chat=False, **kwargs):
+        """
+        Genera l'output del modello in streaming, con controllo sui token e gestione degli stop.
+        Filtra i token non desiderati e restituisce i frammenti di risposta via SSE.
 
+        Args:
+            prompt:         Prompt già formattato per l'input del modello.
+            max_new_tokens: Limite massimo di token da generare.
+            is_chat:        True per modalità chat (sampling), False per completamento (greedy).
+            **kwargs:       Parametri aggiuntivi (es. max_new_tokens, presence_penalty).
+
+        Yields:
+            Frammenti di risposta in formato SSE (Server-Sent Events).
+        """
         max_new_tokens = kwargs.get("max_new_tokens", max_new_tokens)
         print(f"{ColoreLog.DEBUG}[STREAM]{ColoreLog.RESET} max_new_tokens={max_new_tokens} | kwargs keys={list(kwargs.keys())}")
 
@@ -228,6 +239,7 @@ class JarvisServerIDE:
             self.model_lock.release()  
             yield "data: [DONE]\n\n"
 
+    # Gestisce il ciclo di chiamate tool e streaming finale
     def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int):
         """
         Gestisce il ciclo completo di tool calling:
@@ -303,7 +315,14 @@ class JarvisServerIDE:
             self.model_lock.release()
             yield "data: [DONE]\n\n"    
 
+    # Configura le route API per le API OpenAI-compatibili
     def _setup_routes(self):
+        """
+        Configura le route FastAPI per le API OpenAI-compatibili:
+        - POST /v1/chat/completions: Gestione chat con supporto strumenti.
+        - POST /v1/completions: Gestione completamenti (autocompletamento).
+        - GET /v1/models: Lista dei modelli disponibili.
+        """
         @self.app.post("/v1/chat/completions")
         async def chat(request: Request):
             data = await request.json()
@@ -360,39 +379,17 @@ class JarvisServerIDE:
         async def list_models():
             return {
                 "data": [{"id": "jarvis"}]
-            } 
-
-        @self.app.post("/v1/embeddings") 
-        async def embeddings(request: Request):
-            if self.emb_model is None:
-                return {"error": "Modello di embedding non caricato"}
-            data = await request.json()
-            input_text = data.get("input")
-
-            if isinstance(input_text, str):
-                input_text = [input_text]
-
-            inputs = self.emb_tokenizer(
-                input_text,
-                padding=True,
-                truncation=True,
-                return_tensors="pt"
-                )
-            outputs = self.emb_model(**inputs)
-
-            embeddings_list = outputs.last_hidden_state.mean(dim=1).detach().numpy().tolist()
-
-            return {
-                "object": "list",
-                "data": [
-                    {"object": "embedding", "embedding": emb, "index": i} 
-                    for i, emb in enumerate(embeddings_list)
-                ],
-                "model": self.emb_name,
-                "usage": {"prompt_tokens": 0, "total_tokens": 0}
             }
-        
+
+    # Avvia il server FastAPI con l'API OpenAI-compatibile    
     def run_server_IDE(self, host="0.0.0.0", port=8000):
+        """
+        Avvia il server FastAPI con l'API OpenAI-compatibile.
+
+        Args:
+            host: Indirizzo IP del server (default: "0.0.0.0").
+            port: Numero della porta (default: 8000).
+        """
         self.load_hardware()
         print(f"\n[READY] Server Jarvis attivo su https://{host}:{port}")
         uvicorn.run(self.app, host=host, port=port)
