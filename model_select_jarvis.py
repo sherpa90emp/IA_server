@@ -6,10 +6,11 @@ from optimum.intel.openvino import OVModelForCausalLM
 from optimum.exporters.openvino.convert import export_tokenizer
 from transformers import AutoTokenizer
 
+# Ottiene l'elenco dei modelli locali disponibili nella directory
 def get_local_models():
     models_dir = "/home/andrea/models"
     if not os.path.exists(models_dir):
-        return []
+        return [] 
     
     local_models = [
         m for m in os.listdir(models_dir)
@@ -17,6 +18,7 @@ def get_local_models():
     ]
     return sorted(local_models)
 
+# Funzione per stampare il messaggio iniziale con i modelli disponibili
 def messaggio_iniziale(local_models): 
     if local_models:
         print("\nModelli già presenti localmente:")
@@ -24,13 +26,15 @@ def messaggio_iniziale(local_models):
             print(f"{i} - {model}")
 
     print("\nInserisci il numero o il nome del modello che desideri usare: ")
-    print("\nPremendo INVIO verrà usato il modello predefinito. (Qwen2.5-Coder-1.5B)")
+    print("\nPremendo INVIO verrà usato il modello predefinito. (Qwen3-14B-int4-ov)")
     print("\nScrivi EXIT per uscire.\n")
 
+# Funzione per stampare un messaggio di avviso in caso di errore
 def messaggio_next_error():
     print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.")
     print("Inserire un modello corretto")
 
+# Funzione per ottenere l'input dell'utente
 def get_user_input(local_models):
     while True:
         user_input = input().strip()
@@ -39,7 +43,7 @@ def get_user_input(local_models):
             sys.exit(0)
 
         if not user_input :
-            return "Qwen/Qwen2.5-Coder-1.5B"
+            return "Qwen/Qwen3-14B-int4-ov"
         if user_input.isdigit():
             i = int(user_input) - 1
             if 0 <= i < len(local_models):
@@ -48,6 +52,7 @@ def get_user_input(local_models):
                 print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto")
         return user_input
 
+# Verifica se il modello esiste localmente, altrimenti lo scarica o lo converte
 def check_and_prepare_model(model_name, model_path):
     if not os.path.exists(model_path) :
         print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
@@ -90,6 +95,8 @@ def check_and_prepare_model(model_name, model_path):
         print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...")
         return model_name, model_path
 
+
+# Funzione principale per selezionare il modello
 def get_model_selection() :
     errore_rilevato = False
     while True :
