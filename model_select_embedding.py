@@ -1,5 +1,6 @@
 import os
 from huggingface_hub import snapshot_download
+from optimum.intel import OVModelForFeatureExtraction
 from color_logger import ColoreLog
 
 def conferma_uso_emb():
@@ -59,4 +60,14 @@ def get_local_models_emb():
             except Exception as e:
                 print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Download fallito: {e}")
                 return None, None
-        return default_name, default_path 
+        return default_name, default_path
+
+def load_model_emb():
+    if emb_path and os.path.exists(emb_path):
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Caricamento modello Embedding {emb_name}")
+        emb_model = OVModelForFeatureExtraction.from_pretrained(
+            emb_path,
+            device=target_device
+        )
+        emb_tokenizer = AutoTokenizer.from_pretrained(emb_path)
+        print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}") 
