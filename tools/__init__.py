@@ -5,7 +5,7 @@ from color_logger import ColoreLog
 # Registry centrale: nome_tool → { func, schema }
 TOOL_REGISTRY: dict = {}
 
-
+# Registra un tool nel registry globale con la sua funzione e schema
 def register_tool(name: str, func, schema: dict) -> None:
     """
     Registra un tool nel registry globale.
@@ -18,7 +18,7 @@ def register_tool(name: str, func, schema: dict) -> None:
     TOOL_REGISTRY[name] = {"func": func, "schema": schema}
     print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET} Registrato: {name}")
 
-
+# Esegue un tool per nome con gli argomenti forniti dal modello
 def execute_tool(name: str, arguments: dict) -> str:
     """
     Esegue un tool per nome con gli argomenti forniti dal modello.
@@ -34,7 +34,7 @@ def execute_tool(name: str, arguments: dict) -> str:
         return f"Errore: tool '{name}' non trovato nel registry."
     try:
         result = TOOL_REGISTRY[name]["func"](**arguments)
-        # Se il risultato è un dict (es. get_meteo), lo formattiamo in testo
+        # Se il risultato è un dict (es. get_meteo), lo formatto in testo
         if isinstance(result, dict):
             if "temperatura" in result:
                 return formatta_meteo(result)
@@ -46,7 +46,7 @@ def execute_tool(name: str, arguments: dict) -> str:
     except Exception as e:
         return f"Errore esecuzione tool '{name}': {e}"
 
-
+# Restituisce la lista degli schemi di tutti i tool registrati
 def get_schemas() -> list:
     """
     Restituisce la lista degli schemi di tutti i tool registrati.
