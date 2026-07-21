@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from utilities.color_logger import ColoreLog
 from huggingface_hub import snapshot_download
 from optimum.intel.openvino import OVModelForCausalLM
@@ -90,10 +91,20 @@ def check_and_prepare_model(model_name, model_path):
             
             print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}")
             del ov_model
-        return model_name, model_path, model_type
+        model_type = check_type_model(model_path)
+        if model_type is None :
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.")
+            return None
+        else:
+            return model_name, model_path, model_type
     else :
         print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...")
-        return model_name, model_path, model_type
+        model_type = check_type_model(model_path)
+        if model_type is None :
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.")
+            return None
+        else:
+            return model_name, model_path, model_type
 
 
 # Funzione principale per selezionare il modello
@@ -115,7 +126,7 @@ def get_model_selection() :
             model_path = f"/home/andrea/models/{model_name.split('/')[-1]}-ov"
 
         try :
-            result = check_and_prepare_model(model_name, model_path, model_type)
+            result = check_and_prepare_model(model_name, model_path)
             if result:
                 return result
             else:
@@ -124,3 +135,26 @@ def get_model_selection() :
         except Exception as e :
             print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore durante la selezione del modello: {e}")
             errore_rilevato = True
+
+def check_type_model(model_path) :
+    type_model_path = os.path.join(model_path, "config.json")
+
+    
+    if not os.path.exists(type_model_path) :
+        print("Path inesistente. Inserire un path valido.")
+        return None
+    
+    with open(type_model_path, "r") as f:
+        try : 
+            data = json.load(f)
+            architectures = data["architectures"]
+            arch_str = architectures[0]
+            if "ForConditionalGeneration" in arch_str or "VL" in arch_str:
+                model_type = "vlm"
+                return model_type
+            else:
+                model_type = "llm"
+                return model_type
+        except Exception as e :
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Key inesistente: {e}")
+            return None            
