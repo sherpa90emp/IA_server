@@ -1,18 +1,13 @@
 import os
 from huggingface_hub import snapshot_download
 from optimum.intel import OVModelForFeatureExtraction
-from color_logger import ColoreLog
+from transformers import AutoTokenizer
+from utilities.color_logger import ColoreLog
+from utilities.general_func import rileva_device
 
 def conferma_uso_emb():
-    print(f"Vuoi utilizzare un modello di embedding? s/N")
-    user_input = input().strip().lower()
-
-    if user_input == "s":
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Procedo alla selezione dei modelli di embedding")
-        return get_local_models_emb()
-    else:
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modalità 'Solo Regole' attiva.")
-        return None, None
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Procedo alla selezione dei modelli di embedding")
+    return get_local_models_emb()
 
 def get_local_models_emb():
     model_dir = "/home/andrea/models"
@@ -62,12 +57,17 @@ def get_local_models_emb():
                 return None, None
         return default_name, default_path
 
-def load_model_emb():
+def load_model_emb(emb_name, emb_path):
+    model_device_name_GPU, model_device_name_CPU, target_device = rileva_device()
     if emb_path and os.path.exists(emb_path):
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Caricamento modello Embedding {emb_name}")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Caricamento modello Embedding {emb_name} sulla {model_device_name_GPU} da {emb_path}")
         emb_model = OVModelForFeatureExtraction.from_pretrained(
             emb_path,
             device=target_device
         )
         emb_tokenizer = AutoTokenizer.from_pretrained(emb_path)
         print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}") 
+        return emb_model, emb_tokenizer
+    else:
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColorLog.RESET} Caricamento del modello interrotto.")
+        return None, None    
