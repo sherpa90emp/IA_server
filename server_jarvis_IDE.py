@@ -9,14 +9,16 @@ import openvino_genai as ov_genai
 import openvino as ov
 from transformers import AutoTokenizer
 import uvicorn
-from color_logger import ColoreLog
+from utilities.color_logger import ColoreLog
+from utilities.general_func import rileva_device
 from tools import TOOL_REGISTRY, execute_tool, get_schemas
 
 class JarvisServerIDE:
     # Inizializza il server con modello e configurazioni base
-    def __init__(self, model_name, model_path):
+    def __init__(self, model_name, model_path, model_type):
         self.model_name = model_name
         self.model_path = model_path
+        self.model_type = model_type
 
         self.app = FastAPI()
         self.model_lock = threading.Lock()
@@ -36,29 +38,20 @@ class JarvisServerIDE:
         Nota: Il modello viene caricato tramite `LLMPipeline` con il percorso specificato,
         utilizzando la tokenizzazione da `AutoTokenizer` per il modello selezionato.
         """
-        core = ov.Core()
-        devices = core.available_devices
-
-        model_device_name_GPU = "Non trovata"
-        model_device_name_CPU = "Non trovata"
-        target_device = "CPU"
-
-        for device in devices : 
-            full_name = core.get_property(device, "FULL_DEVICE_NAME")
-
-            if "GPU" in full_name :
-                model_device_name_GPU = full_name
-                target_device = "GPU"
-            elif "CPU" in full_name :
-                model_device_name_CPU = full_name
+        model_device_name_GPU, model_device_name_CPU, target_device = rileva_device()
                 
         try :
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} sulla {model_device_name_GPU} da {self.model_path}")
-            self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
+            if self.model_type == "llm":
+                self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
+                
+            else:
+                self.pipe = ov_genai.VLMPipeline(self.model_path, target_device)
+
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path,
-                trust_remote_code=True
-                )
+                    self.model_path,
+                    trust_remote_code=True
+                    )          
             print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")            
         except Exception as e :
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
