@@ -1,6 +1,6 @@
 from tools.meteo import get_meteo, formatta_meteo
 from tools.lettura_file import search_file, read_file, mod_file
-from color_logger import ColoreLog
+from utilities.color_logger import ColoreLog
 
 # Registry centrale: nome_tool → { func, schema }
 TOOL_REGISTRY: dict = {}

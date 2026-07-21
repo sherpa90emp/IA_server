@@ -1,5 +1,5 @@
 import os
-from color_logger import ColoreLog
+from utilities.color_logger import ColoreLog
 import difflib
 
 FILE_DIR = "/home/andrea/"

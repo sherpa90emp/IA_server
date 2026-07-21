@@ -1,5 +1,5 @@
 import requests
-from color_logger import ColoreLog
+from utilities.color_logger import ColoreLog
 
 _GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
