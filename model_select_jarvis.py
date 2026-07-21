@@ -1,6 +1,6 @@
 import os
 import sys
-from color_logger import ColoreLog
+from utilities.color_logger import ColoreLog
 from huggingface_hub import snapshot_download
 from optimum.intel.openvino import OVModelForCausalLM
 from optimum.exporters.openvino.convert import export_tokenizer
@@ -90,10 +90,10 @@ def check_and_prepare_model(model_name, model_path):
             
             print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}")
             del ov_model
-        return model_name, model_path
+        return model_name, model_path, model_type
     else :
         print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...")
-        return model_name, model_path
+        return model_name, model_path, model_type
 
 
 # Funzione principale per selezionare il modello
@@ -115,7 +115,7 @@ def get_model_selection() :
             model_path = f"/home/andrea/models/{model_name.split('/')[-1]}-ov"
 
         try :
-            result = check_and_prepare_model(model_name, model_path)
+            result = check_and_prepare_model(model_name, model_path, model_type)
             if result:
                 return result
             else:
