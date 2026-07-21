@@ -30,7 +30,7 @@ class JarvisServerIDE:
     # Carica il modello sul dispositivo hardware disponibile (priorità GPU)
     def load_hardware(self):
         """
-        Carica il modello LLM sul dispositivo hardware disponibile (priorità GPU > CPU).
+        Carica il modello VLM o LLM sul dispositivo hardware disponibile (priorità GPU > CPU).
         1. Identifica i dispositivi OpenVINO disponibili (GPU Arc B50, CPU).
         2. Tenta di caricare il modello sulla GPU; in caso di fallimento, ricade sulla CPU.
         3. Utilizza il logger colorato per segnalare lo stato del caricamento.
@@ -96,7 +96,7 @@ class JarvisServerIDE:
                     config.do_sample = True
                     config.temperature = 0.6
 
-                self.pipe.generate(prompt, config, streamer=ov_streamer)
+                self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
             except Exception as e:
                 print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore generazione: {e}")
             finally:
@@ -165,7 +165,7 @@ class JarvisServerIDE:
                         config.do_sample = True
                         config.temperature = 0.6
 
-                    self.pipe.generate(prompt, config, streamer=ov_streamer)
+                    self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
                 except Exception as e :
                     print(f"Errore generazione: {e}")
                 finally : 
