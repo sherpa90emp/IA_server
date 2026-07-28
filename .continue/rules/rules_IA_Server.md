@@ -5,7 +5,7 @@
 - In modalità Agent o Chat, quando proponi modifiche a un file esistente, NON riscrivere le parti di codice non modificate. Al loro posto inserisci un placeholder come `// ...codice esistente...` e mostra solo le righe effettivamente cambiate.
 - Non introdurre dipendenze esterne senza accordo esplicito.
 - I modelli si trovano in `../models/` (fuori dal repository) — non modificare mai quel percorso.
-- Il server espone API OpenAI-compatibili: non alterare i path `/v1/chat/completions`, `/v1/completions`, `/v1/models`, `/v1/embeddings`.
+- Il server espone API OpenAI-compatibili: non alterare i path `/v1/chat/completions`, `/v1/completions`, `/v1/models`.
 - Non rimuovere la logica di filtraggio del tag `<think>` in `stream_generator` — è necessaria per i modelli reasoning (es. Qwen).
 
 ## Project Overview
@@ -33,13 +33,15 @@ IA_server/
 ├── model_select_embedding.py      # Selezione modello embedding
 ├── server_jarvis_IDE.py           # Server FastAPI (classe JarvisServerIDE)
 ├── server_jarvis_web_chat.py      # Web chat Streamlit (WIP)
-├── color_logger.py                # Logger colorato con colorama
+├── utilities
+    ├── color_logger.py            # Logger colorato con colorama
+    └── general_func.py            # Funzioni generali riutilizzabili
 ├── rules_IA_Server.md             # Regole base del progetto
 ├── tools/
-│   |── meteo.py                   # Tool meteo
-    |── embedding.py               # Script per tools di embedding (incompleto)
-    |── lettura_file.py            # Tools per modifica e lettura file
-    |── _init_.py                  # Contine la logica per l'utilizzo dei tools
+    ├── meteo.py                   # Tool meteo
+    ├── embedding.py               # Script per tools di embedding (incompleto)
+    ├── lettura_file.py            # Tools per modifica e lettura file
+    └── _init_.py                  # Contine la logica per l'utilizzo dei tools
 ├── test/                          # Script di test e benchmark
 └── deprecated/                    # Script obsoleti (non modificare)
 
