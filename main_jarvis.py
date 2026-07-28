@@ -38,7 +38,7 @@ def avvio_jarvis():
                 emb_model, emb_tokenizer = load_model_emb(model_name, model_path)
                 input_text = select_file_for_emb()
                 file_emb_test = generate_embedding(model_name, emb_model, emb_tokenizer, input_text)
-                print file_emb_test
+                print(file_emb_test)
             elif user_input.lower() in ["exit", "esci"]:
                 print(f"\n[STOP] Server Jarvis arrestato")
                 sys.exit(0)
