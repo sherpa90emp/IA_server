@@ -38,3 +38,17 @@ def select_file_for_emb():
             return input_text
     except Exception as e:
         print(f"{ColorLog.ERROR}[ERROR]{ColorLog.RESET} Rievato errore: {e}")
+
+def chunk_testo(input_text: str, emb_tokenizer, max_token: int, overlap: int):
+    tokenizer_input_text = len(emb_tokenizer.encode(input_text))
+    if tokenizer_input_text < max_token:
+        input_text = [input_text]
+        return input_text
+    else:
+        input_text_list = []
+        token_ids = emb_tokenizer.encode(input_text)
+        for i in range(0, len(token_ids), (max_token - overlap)):
+            chunk_ids = token_ids[i : i + max_token]
+            chunk_decoded_testo = emb_tokenizer.decode(chunk_ids)
+            input_text_list.append(chunk_decoded_testo)
+        return input_text_list    
