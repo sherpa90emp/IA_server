@@ -1,7 +1,7 @@
 import numpy
 import os
-from lettura_file import get_all_files, select_file_list, read_file
-from utillities.color_logger import ColorLog
+from tools.lettura_file import get_all_files, select_file, read_file
+from utilities.color_logger import ColoreLog
 
 def generate_embedding(emb_name, emb_model, emb_tokenizer, input_text):
     if isinstance(input_text, str): 
@@ -33,11 +33,11 @@ def select_file_for_emb():
         user_dir = input()
         if user_dir:
             file_list =  get_all_files(user_dir)
-            selected_file = select_file_list(file_list)
+            selected_file = select_file(file_list)
             input_text = read_file(selected_file)
             return input_text
     except Exception as e:
-        print(f"{ColorLog.ERROR}[ERROR]{ColorLog.RESET} Rievato errore: {e}")
+        print(f"{ColoreLog.ERROR}[ERROR]{ColoreLog.RESET} Rievato errore: {e}")
 
 def chunk_testo(input_text: str, emb_tokenizer, max_token: int, overlap: int):
     tokenizer_input_text = len(emb_tokenizer.encode(input_text))

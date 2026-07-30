@@ -88,7 +88,7 @@ def mod_file(file_path, content):
     """
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
-    return f"File '{file_path}' salvato correttamente."
+    return f"{ColorLog.SUCCESS}[SUCCESS]{ColorLog.RESET} File '{file_path}' salvato correttamente."
 
 def print_file_list(file_list):
     """

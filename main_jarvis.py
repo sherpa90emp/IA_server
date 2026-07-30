@@ -3,7 +3,7 @@ from model_select_embedding import conferma_uso_emb, load_model_emb
 from server_jarvis_IDE import JarvisServerIDE
 from utilities.color_logger import ColoreLog
 import sys
-from embedding import generate_embedding, select_file_for_emb
+from tools.embedding import generate_embedding, select_file_for_emb
 
 def avvio_jarvis():
 
