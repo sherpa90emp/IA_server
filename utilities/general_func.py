@@ -1,4 +1,5 @@
 import openvino as ov
+import os
 
 def rileva_device():
     core = ov.Core()
@@ -18,3 +19,6 @@ def rileva_device():
             model_device_name_CPU = full_name
 
     return model_device_name_GPU, model_device_name_CPU, target_device
+
+def compose_path(dir, file):
+    return os.path.join(dir, file)
