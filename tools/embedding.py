@@ -1,18 +1,21 @@
 import numpy
 import os
+import  tools
 from tools.lettura_file import get_all_files, select_file, read_file
 from utilities.color_logger import ColoreLog
+from utilities.general_func import compose_path
 
-def generate_embedding(emb_name, emb_model, emb_tokenizer, input_text):
-    if isinstance(input_text, str): 
-        input_text = [input_text]
+def generate_embedding(emb_name, emb_model, emb_tokenizer, chunks):
+    if isinstance(chunks, str): 
+        chunks = [chunks]
 
     inputs = emb_tokenizer(
-        input_text,
+        chunks,
         padding=True,
         truncation=True,
         return_tensors="pt"
         )
+    
     outputs = emb_model(**inputs)
 
     embeddings_list = outputs.last_hidden_state.mean(dim=1).detach().numpy().tolist()
@@ -34,21 +37,23 @@ def select_file_for_emb():
         if user_dir:
             file_list =  get_all_files(user_dir)
             selected_file = select_file(file_list)
-            input_text = read_file(selected_file)
+            dir = compose_path(tools.lettura_file.FILE_DIR, user_dir)
+            selected_file_path = compose_path(dir, selected_file)
+            input_text = read_file(selected_file_path)
             return input_text
     except Exception as e:
-        print(f"{ColoreLog.ERROR}[ERROR]{ColoreLog.RESET} Rievato errore: {e}")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Rilevato errore: {e}")
 
 def chunk_testo(input_text: str, emb_tokenizer, max_token: int, overlap: int):
     tokenizer_input_text = len(emb_tokenizer.encode(input_text))
     if tokenizer_input_text < max_token:
-        input_text = [input_text]
-        return input_text
+        chunk = [input_text]
+        return chunk
     else:
-        input_text_list = []
+        chunks_list = []
         token_ids = emb_tokenizer.encode(input_text)
         for i in range(0, len(token_ids), (max_token - overlap)):
             chunk_ids = token_ids[i : i + max_token]
             chunk_decoded_testo = emb_tokenizer.decode(chunk_ids)
-            input_text_list.append(chunk_decoded_testo)
-        return input_text_list    
+            chunks_list.append(chunk_decoded_testo)
+        return chunks_list    
