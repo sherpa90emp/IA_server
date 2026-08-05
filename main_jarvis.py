@@ -3,7 +3,7 @@ from model_select_embedding import conferma_uso_emb, load_model_emb
 from server_jarvis_IDE import JarvisServerIDE
 from utilities.color_logger import ColoreLog
 import sys
-from tools.embedding import generate_embedding, select_file_for_emb
+from tools.embedding import generate_embedding, select_file_for_emb, chunk_testo
 
 def avvio_jarvis():
 
@@ -37,7 +37,9 @@ def avvio_jarvis():
                 model_name, model_path = conferma_uso_emb()
                 emb_model, emb_tokenizer = load_model_emb(model_name, model_path)
                 input_text = select_file_for_emb()
-                file_emb_test = generate_embedding(model_name, emb_model, emb_tokenizer, input_text)
+                chunks = chunk_testo(input_text, emb_tokenizer, 1000, 100)
+                print(chunks)
+                file_emb_test = generate_embedding(model_name, emb_model, emb_tokenizer, chunks)
                 print(file_emb_test)
             elif user_input.lower() in ["exit", "esci"]:
                 print(f"\n[STOP] Server Jarvis arrestato")
