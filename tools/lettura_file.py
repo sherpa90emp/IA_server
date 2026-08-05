@@ -88,7 +88,7 @@ def mod_file(file_path, content):
     """
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
-    return f"{ColorLog.SUCCESS}[SUCCESS]{ColorLog.RESET} File '{file_path}' salvato correttamente."
+    return f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} File '{file_path}' salvato correttamente."
 
 def print_file_list(file_list):
     """
@@ -128,6 +128,6 @@ def select_file(file_list):
                 if 0 <= i < len(file_list):
                     return file_list[i]
                 else:
-                    print(f"{ColoreLog.WARNING}WARNING{ColoreLog.RESET}Numero inserito non valido, inserisci quello corretto.")
+                    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero inserito non valido, inserisci quello corretto.")
     else:
         print("Nessun file selezionato.")
