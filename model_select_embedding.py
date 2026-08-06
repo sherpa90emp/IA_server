@@ -24,7 +24,7 @@ def get_local_models_emb():
     ]
 
     if local_models_emb:
-        print("\nModelli già presenti localmente:")
+        print("\nModelli già presenti localmente:\n")
         for i, m in enumerate(local_models_emb):
             print(f"{i+1} - {m}")
         while True:
@@ -69,5 +69,5 @@ def load_model_emb(emb_name, emb_path):
         print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}") 
         return emb_model, emb_tokenizer
     else:
-        print(f"{ColoreLog.ERRORE}[ERROR]{ColorLog.RESET} Caricamento del modello interrotto.")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Caricamento del modello interrotto.")
         return None, None    

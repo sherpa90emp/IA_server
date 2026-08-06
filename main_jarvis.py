@@ -20,10 +20,10 @@ def avvio_jarvis():
     print("                                                         ")
     print("---------------------------------------------------------")
 
-    print("\nBenvenuto nel programma di selezione delle IA del server Jarvis")
+    print("\nBenvenuto nel programma di selezione delle IA del server Jarvis\n")
 
     while True:
-        print("\nChe tipo di funzione vuoi che abbia Jarvis?")
+        print("\nChe tipo di funzione vuoi che abbia Jarvis?\n")
         for i, f in enumerate(funzioni):
             print(f"{i+1} - {f}")
         try:
@@ -42,7 +42,7 @@ def avvio_jarvis():
                 file_emb_test = generate_embedding(model_name, emb_model, emb_tokenizer, chunks)
                 print(file_emb_test)
             elif user_input.lower() in ["exit", "esci"]:
-                print(f"\n[STOP] Server Jarvis arrestato")
+                print(f"\n{ColoreLog.STOP}[STOP]{ColoreLog.RESET} Server Jarvis arrestato\n")
                 sys.exit(0)
             else:
                 print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Scelta non valida.")    

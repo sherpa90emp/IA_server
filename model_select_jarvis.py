@@ -26,14 +26,14 @@ def messaggio_iniziale(local_models):
         for i, model in enumerate(local_models, 1):
             print(f"{i} - {model}")
 
-    print("\nInserisci il numero o il nome del modello che desideri usare: ")
-    print("\nPremendo INVIO verrà usato il modello predefinito. (Qwen3-14B-int4-ov)")
-    print("\nScrivi EXIT per uscire.\n")
+    print("\nInserisci il numero o il nome del modello che desideri usare: \n")
+    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premendo INVIO verrà usato il modello predefinito. (Qwen3-14B-int4-ov)")
+    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scrivi EXIT per uscire.\n")
 
 # Funzione per stampare un messaggio di avviso in caso di errore
 def messaggio_next_error():
     print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.")
-    print("Inserire un modello corretto")
+    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Inserire un modello corretto\n")
 
 # Funzione per ottenere l'input dell'utente
 def get_user_input(local_models):
@@ -58,7 +58,7 @@ def check_and_prepare_model(model_name, model_path):
     if not os.path.exists(model_path) :
         print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
         
-        confirm = input("Vuoi scaricarlo/esportarlo ora (s/n): ")
+        confirm = input("\nVuoi scaricarlo/esportarlo ora (s/n): ")
         if confirm.lower() != 's' :
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.")
             return None
@@ -141,7 +141,7 @@ def check_type_model(model_path) :
 
     
     if not os.path.exists(type_model_path) :
-        print("Path inesistente. Inserire un path valido.")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path inesistente. Inserire un path valido.")
         return None
     
     with open(type_model_path, "r") as f:

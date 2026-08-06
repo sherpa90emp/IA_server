@@ -98,11 +98,11 @@ def print_file_list(file_list):
         file_list (list): Elenco dei nomi dei file da stampare.
     """
     if file_list :
-        print("\nFile presenti: ")
+        print("\nFile presenti:\n")
         for i, file in enumerate(file_list,1):
             print(f"{i} - {file}")
     else:
-        print("\nNessun file presente")
+        print("\nNessun file presente\n")
 
 def select_file(file_list):
     """
@@ -114,13 +114,13 @@ def select_file(file_list):
     Returns:
         str: Nome del file selezionato, o None se l'utente non ha selezionato alcun file.
     """
-    print("\nVuoi selezionare un file specifico? S/N")
+    print("\nVuoi selezionare un file specifico? S/N\n")
     user_input = input().strip()
 
     if user_input.lower() == "s":
         while True:
             print_file_list(file_list)
-            print("\nQuale file vuoi selezionare?")
+            print("\nQuale file vuoi selezionare?\n")
             user_input_int = input()
 
             if user_input_int.isdigit():
@@ -130,4 +130,4 @@ def select_file(file_list):
                 else:
                     print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero inserito non valido, inserisci quello corretto.")
     else:
-        print("Nessun file selezionato.")
+        print("\nNessun file selezionato.\n")
