@@ -20,5 +20,5 @@ def rileva_device():
 
     return model_device_name_GPU, model_device_name_CPU, target_device
 
-def compose_path(dir, file):
-    return os.path.join(dir, file)
+def compose_path(genric_dir, file):
+    return os.path.join(genric_dir, file)
