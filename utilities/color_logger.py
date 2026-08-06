@@ -9,3 +9,4 @@ class ColoreLog:
     WARNING = Fore.YELLOW
     SUCCESS = Fore.GREEN
     DEBUG = Fore.CYAN
+    STOP = Fore.MAGENTA
