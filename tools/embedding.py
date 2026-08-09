@@ -1,5 +1,4 @@
 import numpy
-import os
 import  tools
 from tools.lettura_file import get_all_files, select_file, read_file
 from utilities.color_logger import ColoreLog

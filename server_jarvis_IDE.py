@@ -384,5 +384,5 @@ class JarvisServerIDE:
             port: Numero della porta (default: 8000).
         """
         self.load_hardware()
-        print(f"\n[READY] Server Jarvis attivo su https://{host}:{port}")
+        print(f"\n{ColoreLog.SUCCESS}[READY]{ColoreLog.RESET} Server Jarvis attivo su https://{host}:{port}")
         uvicorn.run(self.app, host=host, port=port)

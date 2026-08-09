@@ -16,7 +16,7 @@ def register_tool(name: str, func, schema: dict) -> None:
         schema: Schema OpenAI-compatible del tool (type, function, parameters).
     """
     TOOL_REGISTRY[name] = {"func": func, "schema": schema}
-    print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET} Registrato: {name}")
+    print(f"{ColoreLog.TOOL}[TOOL]{ColoreLog.RESET} Registrato: {name}")
 
 # Esegue un tool per nome con gli argomenti forniti dal modello
 def execute_tool(name: str, arguments: dict) -> str:
