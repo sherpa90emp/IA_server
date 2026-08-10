@@ -114,13 +114,13 @@ def select_file(file_list):
     Returns:
         str: Nome del file selezionato, o None se l'utente non ha selezionato alcun file.
     """
-    print("\nVuoi selezionare un file specifico? S/N\n")
+    print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Vuoi selezionare un file specifico? S/N\n")
     user_input = input().strip()
 
     if user_input.lower() == "s":
         while True:
             print_file_list(file_list)
-            print("\nQuale file vuoi selezionare?\n")
+            print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Quale file vuoi selezionare?\n")
             user_input_int = input()
 
             if user_input_int.isdigit():

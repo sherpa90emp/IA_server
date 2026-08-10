@@ -23,7 +23,7 @@ def avvio_jarvis():
     print("\nBenvenuto nel programma di selezione delle IA del server Jarvis\n")
 
     while True:
-        print("\nChe tipo di funzione vuoi che abbia Jarvis?\n")
+        print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Che tipo di funzione vuoi che abbia Jarvis?\n")
         for i, f in enumerate(funzioni):
             print(f"{i+1} - {f}")
         try:

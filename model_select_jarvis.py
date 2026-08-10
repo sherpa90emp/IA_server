@@ -26,7 +26,7 @@ def messaggio_iniziale(local_models):
         for i, model in enumerate(local_models, 1):
             print(f"{i} - {model}")
 
-    print("\nInserisci il numero o il nome del modello che desideri usare: \n")
+    print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Inserisci il numero o il nome del modello che desideri usare: \n")
     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premendo INVIO verrà usato il modello predefinito. (Qwen3-14B-int4-ov)")
     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scrivi EXIT per uscire.\n")
 
@@ -58,7 +58,7 @@ def check_and_prepare_model(model_name, model_path):
     if not os.path.exists(model_path) :
         print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
         
-        confirm = input("\nVuoi scaricarlo/esportarlo ora (s/n): ")
+        confirm = input(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}\nVuoi scaricarlo/esportarlo ora (s/n): ")
         if confirm.lower() != 's' :
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.")
             return None

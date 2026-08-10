@@ -29,7 +29,7 @@ def get_local_models_emb():
             print(f"{i+1} - {m}")
         while True:
             try:
-                scelta = int(input("\nQuale modello di embedding vuoi usare? ")) -1
+                scelta = int(input(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Quale modello di embedding vuoi usare? ")) -1
                 if 0 <= scelta < len(local_models_emb):
                     selected_name = local_models_emb[scelta]
                     selected_path = os.path.join(model_dir, selected_name)
