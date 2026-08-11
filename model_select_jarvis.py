@@ -9,7 +9,14 @@ from transformers import AutoTokenizer
 
 # Ottiene l'elenco dei modelli locali disponibili nella directory
 def get_local_models():
+    """
+    Scansiona la directory dei modelli locali e restituisce una lista ordinata dei modelli disponibili.
+    
+    Ritorna:
+        list: Lista di nomi di modelli locali (vuota se nessun modello è presente).
+    """
     models_dir = "/home/andrea/models"
+
     if not os.path.exists(models_dir):
         return [] 
     
@@ -20,9 +27,17 @@ def get_local_models():
     return sorted(local_models)
 
 # Funzione per stampare il messaggio iniziale con i modelli disponibili
-def messaggio_iniziale(local_models): 
+def messaggio_iniziale(local_models):
+    """
+    Stampa un messaggio iniziale che mostra i modelli disponibili e richiede all'utente un input.
+    
+    Args:
+        local_models (list): Lista di modelli locali da visualizzare.
+    """
+
     if local_models:
         print("\nModelli già presenti localmente:")
+
         for i, model in enumerate(local_models, 1):
             print(f"{i} - {model}")
 
@@ -32,11 +47,25 @@ def messaggio_iniziale(local_models):
 
 # Funzione per stampare un messaggio di avviso in caso di errore
 def messaggio_next_error():
+    """
+    Stampa un messaggio di avviso quando il modello selezionato non è presente nei repository di Huggingface.
+    """
+
     print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.")
     print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Inserire un modello corretto\n")
 
 # Funzione per ottenere l'input dell'utente
 def get_user_input(local_models):
+    """
+    Gestisce l'input dell'utente per selezionare un modello, con supporto per l'uscita, il modello predefinito o la selezione per numero/nome.
+    
+    Args:
+        local_models (list): Lista di modelli locali disponibili.
+    
+    Returns:
+        str: Nome del modello selezionato o predefinito.
+    """
+
     while True:
         user_input = input().strip()
 
@@ -45,20 +74,35 @@ def get_user_input(local_models):
 
         if not user_input :
             return "Qwen/Qwen3-14B-int4-ov"
+        
         if user_input.isdigit():
             i = int(user_input) - 1
+
             if 0 <= i < len(local_models):
                 return local_models[i]
             else:
                 print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto")
+
         return user_input
 
 # Verifica se il modello esiste localmente, altrimenti lo scarica o lo converte
 def check_and_prepare_model(model_name, model_path):
+    """
+    Verifica se il modello esiste localmente. Se non esiste, chiede all'utente di scaricarlo o convertirlo.
+    
+    Args:
+        model_name (str): Nome del modello.
+        model_path (str): Percorso locale dove salvare il modello.
+    
+    Returns:
+        tuple: (model_name, model_path, model_type) se operazione riuscita, None altrimenti.
+    """
+
     if not os.path.exists(model_path) :
         print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
         
         confirm = input(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}\nVuoi scaricarlo/esportarlo ora (s/n): ")
+
         if confirm.lower() != 's' :
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.")
             return None
@@ -91,15 +135,19 @@ def check_and_prepare_model(model_name, model_path):
             
             print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}")
             del ov_model
+
         model_type = check_type_model(model_path)
+
         if model_type is None :
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.")
             return None
         else:
             return model_name, model_path, model_type
+        
     else :
         print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...")
         model_type = check_type_model(model_path)
+
         if model_type is None :
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.")
             return None
@@ -109,7 +157,15 @@ def check_and_prepare_model(model_name, model_path):
 
 # Funzione principale per selezionare il modello
 def get_model_selection() :
+    """
+    Funzione principale per la selezione del modello. Gestisce il ciclo di selezione, gestione errori e richiama altre funzioni.
+    
+    Returns:
+        tuple: (model_name, model_path, model_type) se operazione riuscita.
+    """
+
     errore_rilevato = False
+
     while True :
         models_disponibili = get_local_models()
 
@@ -127,16 +183,28 @@ def get_model_selection() :
 
         try :
             result = check_and_prepare_model(model_name, model_path)
+
             if result:
                 return result
             else:
                 errore_rilevato = False
                 continue
+
         except Exception as e :
             print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore durante la selezione del modello: {e}")
             errore_rilevato = True
 
 def check_type_model(model_path) :
+    """
+    Determina il tipo di modello (llm o vlm) analizzando il file config.json.
+    
+    Args:
+        model_path (str): Percorso del modello.
+    
+    Returns:
+        str: Tipo di modello ('llm' o 'vlm') o None se non riconosciuto.
+    """
+    
     type_model_path = os.path.join(model_path, "config.json")
 
     
@@ -149,12 +217,14 @@ def check_type_model(model_path) :
             data = json.load(f)
             architectures = data["architectures"]
             arch_str = architectures[0]
+
             if "ForConditionalGeneration" in arch_str or "VL" in arch_str:
                 model_type = "vlm"
                 return model_type
             else:
                 model_type = "llm"
                 return model_type
+            
         except Exception as e :
             print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Key inesistente: {e}")
             return None            

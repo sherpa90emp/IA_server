@@ -38,6 +38,7 @@ class JarvisServerIDE:
         Nota: Il modello viene caricato tramite `LLMPipeline` con il percorso specificato,
         utilizzando la tokenizzazione da `AutoTokenizer` per il modello selezionato.
         """
+
         model_device_name_GPU, model_device_name_CPU, target_device = rileva_device()
                 
         try :
@@ -74,6 +75,7 @@ class JarvisServerIDE:
         Returns:
             Output grezzo completo del modello (incluso eventuale blocco <think>).
         """
+
         token_queue = Queue()
         stop_event = threading.Event()
 
@@ -134,10 +136,12 @@ class JarvisServerIDE:
         Yields:
             Frammenti di risposta in formato SSE (Server-Sent Events).
         """
+
         max_new_tokens = kwargs.get("max_new_tokens", max_new_tokens)
         print(f"{ColoreLog.DEBUG}[STREAM]{ColoreLog.RESET} max_new_tokens={max_new_tokens} | kwargs keys={list(kwargs.keys())}")
 
         lock_acquired = self.model_lock.acquire(blocking=False)
+
         if not lock_acquired:
             yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
             return
@@ -149,6 +153,7 @@ class JarvisServerIDE:
             def ov_streamer(subword: str) :
                 if stop_event.is_set() :
                     return True
+                
                 token_queue.put(subword)
                 return False
         
@@ -166,8 +171,10 @@ class JarvisServerIDE:
                         config.temperature = 0.6
 
                     self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
+
                 except Exception as e :
                     print(f"Errore generazione: {e}")
+
                 finally : 
                     token_queue.put(None)
         
@@ -201,12 +208,15 @@ class JarvisServerIDE:
                     if not found_and_think:
                         think_buffer += token
                         print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token ricevuto: {repr(token)} | in_think: {found_and_think} | buffer tail: {repr(think_buffer)}")
+                        
                         if "</think>" in think_buffer:
                             found_and_think = True
                             after_think = think_buffer.split("</think>", 1)[-1]
                             think_buffer = ""
+
                             if not after_think.strip():
                                 continue
+
                             token = after_think
                         else:
                             continue        
@@ -220,12 +230,15 @@ class JarvisServerIDE:
                         chunk = {
                             "choices": [{"text": token, "index": 0}] 
                         }
+
                     yield f"data: {json.dumps(chunk)}\n\n"
+
             except GeneratorExit:
                 stop_event.set()
                 print("Client disconnesso, segnale di stop inviato.")
                 thread.join(timeout=1.0)
                 raise
+
         finally :
             stop_event.set()
             thread.join(timeout=1.0)
@@ -248,6 +261,7 @@ class JarvisServerIDE:
             max_new_tokens: Limite token per ogni generazione.
         """
         lock_acquired = self.model_lock.acquire(blocking=False)
+
         if not lock_acquired:
             yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
             return
@@ -289,6 +303,7 @@ class JarvisServerIDE:
                             add_generation_prompt=True
                         )
                         continue
+
                     except (json.JSONDecodeError, Exception) as e:
                         print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore parsing tool call: {e}")
                 
@@ -304,6 +319,7 @@ class JarvisServerIDE:
                     chunk = {"choices": [{"delta": {"content": chunk_text}, "index": 0}]}
                     yield f"data: {json.dumps(chunk)}\n\n"
                 break
+
         finally:
             self.model_lock.release()
             yield "data: [DONE]\n\n"    
@@ -316,6 +332,7 @@ class JarvisServerIDE:
         - POST /v1/completions: Gestione completamenti (autocompletamento).
         - GET /v1/models: Lista dei modelli disponibili.
         """
+
         @self.app.post("/v1/chat/completions")
         async def chat(request: Request):
             data = await request.json()
