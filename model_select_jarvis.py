@@ -41,7 +41,7 @@ def messaggio_iniziale(local_models):
         for i, model in enumerate(local_models, 1):
             print(f"{i} - {model}")
 
-    print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Inserisci il numero o il nome del modello che desideri usare: \n")
+    print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Inserisci il numero o il nome del modello che desideri usare: ")
     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premendo INVIO verrà usato il modello predefinito. (Qwen3-14B-int4-ov)")
     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scrivi EXIT per uscire.\n")
 
