@@ -1,5 +1,5 @@
 import re
-import os
+import time
 import json
 import threading
 from queue import Queue, Empty
@@ -58,6 +58,10 @@ class JarvisServerIDE:
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} su {model_device_name_CPU}...")
             self.pipe = ov_genai.LLMPipeline(self.model_path, "CPU")
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                                self.model_path,
+                                trust_remote_code=True
+                                ) 
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_CPU}")     
 
     # Esegue generazione non-streaming del modello
@@ -138,7 +142,7 @@ class JarvisServerIDE:
         """
 
         max_new_tokens = kwargs.get("max_new_tokens", max_new_tokens)
-        print(f"{ColoreLog.DEBUG}[STREAM]{ColoreLog.RESET} max_new_tokens={max_new_tokens} | kwargs keys={list(kwargs.keys())}")
+        print(f"{ColoreLog.DEBUG}[STREAM]{ColoreLog.RESET} max_new_tokens = {max_new_tokens} | kwargs keys = {list(kwargs.keys())}")
 
         lock_acquired = self.model_lock.acquire(blocking=False)
 
@@ -183,7 +187,11 @@ class JarvisServerIDE:
 
             try :
                 found_and_think = False
+                token_count_think = 0
+                token_count_risposta = 0
                 think_buffer = ""
+                start_time = time.time()
+                print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione in corso...")
 
                 while True :
                     try :
@@ -194,6 +202,8 @@ class JarvisServerIDE:
                         continue
 
                     if token is None :
+                        response_time = time.time() - ttft
+                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {time.time() - ttft:.2f} secondi. Rate: {token_count_risposta / response_time:.2f} token/s. Token generati: {token_count_risposta}\n")
                         break
 
                     if not is_chat :
@@ -207,19 +217,30 @@ class JarvisServerIDE:
 
                     if not found_and_think:
                         think_buffer += token
-                        print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token ricevuto: {repr(token)} | in_think: {found_and_think} | buffer tail: {repr(think_buffer)}")
                         
                         if "</think>" in think_buffer:
                             found_and_think = True
                             after_think = think_buffer.split("</think>", 1)[-1]
+
+                            token_count_think += len(self.tokenizer.encode(think_buffer.split("</think>", 1)[0]))
+
+                            ttlt_think = time.time() - start_time            
+
+                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero completato in {ttlt_think:.2f} secondi. Token generati: {token_count_think}. Rate: {token_count_think / ttlt_think:.2f} token/s.")
+                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token di chiusura: {repr(token)} was_thinking: {found_and_think} think_buffer: {repr(think_buffer)}")
+                            
                             think_buffer = ""
 
                             if not after_think.strip():
+                                ttft = time.time()
                                 continue
 
                             token = after_think
+                            ttft = time.time()
                         else:
-                            continue        
+                            continue
+
+                    token_count_risposta += len(self.tokenizer.encode(token))
 
                     if is_chat :
                         chunk = {
@@ -231,7 +252,7 @@ class JarvisServerIDE:
                             "choices": [{"text": token, "index": 0}] 
                         }
 
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                    yield f"data: {json.dumps(chunk)}\n\n"                 
 
             except GeneratorExit:
                 stop_event.set()
@@ -401,5 +422,5 @@ class JarvisServerIDE:
             port: Numero della porta (default: 8000).
         """
         self.load_hardware()
-        print(f"\n{ColoreLog.SUCCESS}[READY]{ColoreLog.RESET} Server Jarvis attivo su https://{host}:{port}")
+        print(f"\n{ColoreLog.SUCCESS}[READY]{ColoreLog.RESET} Server Jarvis attivo su https://{host}:{port}\n")
         uvicorn.run(self.app, host=host, port=port)
