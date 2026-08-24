@@ -3,9 +3,9 @@ import sys
 import json
 from utilities.color_logger import ColoreLog
 from huggingface_hub import snapshot_download
-from optimum.intel.openvino import OVModelForCausalLM
+from optimum.intel.openvino import OVModelForCausalLM, OVModelForVisualCausalLM
 from optimum.exporters.openvino.convert import export_tokenizer
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoConfig
 
 # Ottiene l'elenco dei modelli locali disponibili nella directory
 def get_local_models():
@@ -51,7 +51,7 @@ def messaggio_next_error():
     Stampa un messaggio di avviso quando il modello selezionato non è presente nei repository di Huggingface.
     """
 
-    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.")
+    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.\n")
     print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Inserire un modello corretto\n")
 
 # Funzione per ottenere l'input dell'utente
@@ -81,7 +81,7 @@ def get_user_input(local_models):
             if 0 <= i < len(local_models):
                 return local_models[i]
             else:
-                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto")
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto.\n")
 
         return user_input
 
@@ -95,61 +95,49 @@ def check_and_prepare_model(model_name, model_path):
         model_path (str): Percorso locale dove salvare il modello.
     
     Returns:
-        tuple: (model_name, model_path, model_type) se operazione riuscita, None altrimenti.
+        tuple: (model_name, model_path, model_type) ad operazione riuscita, None altrimenti.
     """
 
     if not os.path.exists(model_path) :
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path}")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path} \n")
         
         confirm = input(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}\nVuoi scaricarlo/esportarlo ora (s/n): ")
 
         if confirm.lower() != 's' :
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.\n")
             return None
                     
         if "OpenVINO" in model_name or "-ov" in model_name :
-            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Scaricamento del modello {model_name} ottimizzato da Huggingface...")
+            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Scaricamento del modello {model_name} ottimizzato da Huggingface...\n")
             snapshot_download(model_name, local_dir=model_path)
-            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Download completato.")
+            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Download completato.\n")
         else :
-            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Esportazione e quantizzazione int4 in corso (potrebbe richiedere qualche minuto)...")
+            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}\n")
 
-            ov_model = OVModelForCausalLM.from_pretrained(
-                model_name,
-                export=True,
-                compile=False,
-                load_in_8bit=False,
-                fix_mistral_regex=True,
-                quantization_config={
-                    "bits": 4,
-                    "sym": True,
-                    "group_size": 128,
-                    "ratio": 0.8
-                }    
-            )
-            ov_model.save_pretrained(model_path)
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            tokenizer.save_pretrained(model_path)
-            export_tokenizer(tokenizer, model_path)
-            
-            print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}")
-            del ov_model
+            model_hf_type = check_model_type_from_hf(model_name)
+
+            if model_hf_type is None :
+                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Impossibile determinare il tipo di modello da HF.\n")
+                return None
+
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_hf_type.upper()}. Avvio procedura di esportazione per {model_name}...\n")
+
+            conversion_model(model_name, model_path, model_hf_type)
 
         model_type = check_type_model(model_path)
 
         if model_type is None :
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.\n")
             return None
         else:
             return model_name, model_path, model_type
         
     else :
-        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...")
+        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...\n")
         model_type = check_type_model(model_path)
 
         if model_type is None :
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.\n")
             return None
         else:
             return model_name, model_path, model_type
@@ -161,7 +149,7 @@ def get_model_selection() :
     Funzione principale per la selezione del modello. Gestisce il ciclo di selezione, gestione errori e richiama altre funzioni.
     
     Returns:
-        tuple: (model_name, model_path, model_type) se operazione riuscita.
+        tuple: (model_name, model_path, model_type) ad operazione riuscita.
     """
 
     errore_rilevato = False
@@ -191,7 +179,7 @@ def get_model_selection() :
                 continue
 
         except Exception as e :
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore durante la selezione del modello: {e}")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore durante la selezione del modello: {e}\n")
             errore_rilevato = True
 
 def check_type_model(model_path) :
@@ -209,7 +197,7 @@ def check_type_model(model_path) :
 
     
     if not os.path.exists(type_model_path) :
-        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path inesistente. Inserire un path valido.")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path inesistente. Inserire un path valido.\n")
         return None
     
     with open(type_model_path, "r") as f:
@@ -226,5 +214,114 @@ def check_type_model(model_path) :
                 return model_type
             
         except Exception as e :
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Key inesistente: {e}")
-            return None            
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Key inesistente: {e}\n")
+            return None
+
+def check_model_type_from_hf(model_name) :
+    """
+    Determina il tipo di modello (LLM/VLM) analizzando il config.json del modello su Hugging Face.
+    
+    Args:
+        model_name (str): Nome del modello su Hugging Face.
+    
+    Returns:
+        str: 'llm' o 'vlm' in base all'architettura, None se non riconosciuto.
+    """
+    try:
+        config = AutoConfig.from_pretrained(model_name)
+        architectures = config.architectures
+        arch_str = architectures[0]
+
+        if "ForConditionalGeneration" in arch_str or "VL" in arch_str:
+            return "vlm"
+        else:
+            return "llm"
+            
+    except Exception as e:
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Impossibile ottenere il tipo di modello da Hugging Face: {e}\n")
+        return None
+
+def conversion_model(model_name, model_path, model_hf_type) :
+    """
+    Conversione di un modello di Hugging Face in formato OpenVINO.
+    
+    Args:
+        model_name (str): Nome del modello su Hugging Face.
+        model_path (str): Percorso dove salvare il modello OpenVINO.
+    """
+    quantization_config = richiesta_quantization_config(model_hf_type)
+
+    if model_hf_type == "vlm":
+        ov_model_for = OVModelForVisualCausalLM
+    else:
+        ov_model_for = OVModelForCausalLM
+
+    ov_model =  ov_model_for.from_pretrained(
+        model_name,
+        export=True,
+        compile=False,
+        load_in_8bit=False,
+        fix_mistral_regex=True,
+        quantization_config=quantization_config
+    )
+
+    ov_model.save_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.save_pretrained(model_path)
+    export_tokenizer(tokenizer, model_path)
+    
+    print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}\n")
+    del ov_model
+
+
+def richiesta_quantization_config(model_hf_type) :
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Inizio procedura settaggio parametri di conversione del tipo di modello {str(model_hf_type).upper()} \n")
+
+    bits_model = [4, 8]
+    sym_model = [True, False]
+    group_size_model = [64, 128]
+    ratio_model = [0.5, 0.8]
+
+    bits = richiesta_valori(bits_model, bits_model[0], int)
+    sym = richiesta_valori(sym_model, True, bool)
+    group_size = richiesta_valori(group_size_model, group_size_model[0], int)
+    ratio = richiesta_valori(ratio_model, ratio_model[0], float)
+
+    quantization_config = {
+        "bits": int(bits),
+        "sym": bool(sym),
+        "group_size": int(group_size),
+        "ratio": float(ratio)
+    }
+
+    return quantization_config
+
+def stampa_richiesta_valori_quant_config(parametro, valore):
+    print(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET} Inserisci il valore, es {parametro}:\n")
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premere INVIO per usare il valore di default: {valore}\n")
+
+def richiesta_valori(valori_ammessi, valore_default, tipo_conversione):
+    while True:
+        stampa_richiesta_valori_quant_config(valori_ammessi, valore_default)
+        valore_input = input()
+
+        if not valore_input:
+            return valore_default
+
+        try:
+            if tipo_conversione == bool:
+                if valore_input.lower() == "true":
+                    valore = True
+                elif valore_input.lower() == "false":
+                    valore = False
+                else:
+                    raise ValueError("Valore booleano non riconosciuto. Inserire True o False o premere invio per utilizzare il valore di default.\n")
+                return valore
+            else:    
+                valore = tipo_conversione(valore_input)
+                if valore in valori_ammessi:
+                    return valore
+                else:
+                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Valore non valido. Inserire un valore valido.\n")
+        except ValueError as e:
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Input non valido. Inserire un valore valido.\n Error: {e}\n")
