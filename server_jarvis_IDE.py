@@ -57,8 +57,11 @@ class JarvisServerIDE:
             self.tokenizer = AutoTokenizer.from_pretrained(
                     self.model_path,
                     trust_remote_code=True
-                    )          
-            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")
+                    )
+            if target_device == "GPU":          
+                print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU[0]}")
+            else:
+                print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su entrambe le {model_device_name_GPU[0]}")
 
         except Exception as e :
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
