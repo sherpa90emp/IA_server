@@ -5,7 +5,8 @@ def rileva_device():
     core = ov.Core()
     devices = core.available_devices
 
-    model_device_name_GPU = "Non trovata"
+    model_device_name_GPU = []
+    gpu_device_id = []
     model_device_name_CPU = "Non trovata"
     target_device = "CPU"
 
@@ -13,10 +14,15 @@ def rileva_device():
         full_name = core.get_property(device, "FULL_DEVICE_NAME")
 
         if "GPU" in full_name :
-            model_device_name_GPU = full_name
-            target_device = "GPU"
+            model_device_name_GPU.append(full_name)
+            gpu_device_id.append(device)
         elif "CPU" in full_name :
             model_device_name_CPU = full_name
+
+    if len(model_device_name_GPU) < 2:
+        target_device = "GPU"
+    else:
+        target_device = "HETERO" + ",".join(gpu_device_id)
 
     return model_device_name_GPU, model_device_name_CPU, target_device
 

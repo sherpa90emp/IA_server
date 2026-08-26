@@ -44,16 +44,22 @@ class JarvisServerIDE:
         try :
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} sulla {model_device_name_GPU} da {self.model_path}")
             if self.model_type == "llm":
-                self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
-                
+                if target_device == "GPU":
+                    self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
+                else:
+                    self.pipe = ov_genai.LLMPipeline(self.model_path, target_device, MODEL_DISTRUIBUTION_POLICY="PIPELINE_PARALLEL")
             else:
-                self.pipe = ov_genai.VLMPipeline(self.model_path, target_device)
+                if target_device == "GPU":
+                    self.pipe = ov_genai.VLMPipeline(self.model_path, target_device)
+                else:
+                    self.pipe = ov_genai.VLMPipeline(self.model_path, target_device, MODEL_DISTRUIBUTION_POLICY="PIPELINE_PARALLEL")
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                     self.model_path,
                     trust_remote_code=True
                     )          
-            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")            
+            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}")
+
         except Exception as e :
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} su {model_device_name_CPU}...")
