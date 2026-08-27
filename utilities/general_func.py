@@ -1,5 +1,7 @@
 import openvino as ov
 import os
+import re
+from transformers import AutoConfig
 
 def rileva_device():
     core = ov.Core()
@@ -7,8 +9,7 @@ def rileva_device():
 
     model_device_name_GPU = []
     gpu_device_id = []
-    model_device_name_CPU = "Non trovata"
-    target_device = "CPU"
+    model_device_name_CPU = "CPU"
 
     for device in devices : 
         full_name = core.get_property(device, "FULL_DEVICE_NAME")
@@ -18,13 +19,8 @@ def rileva_device():
             gpu_device_id.append(device)
         elif "CPU" in full_name :
             model_device_name_CPU = full_name
-
-    if len(model_device_name_GPU) < 2:
-        target_device = "GPU"
-    else:
-        target_device = "HETERO" + ",".join(gpu_device_id)
-
-    return model_device_name_GPU, model_device_name_CPU, target_device
+        
+    return model_device_name_GPU, model_device_name_CPU, gpu_device_id
 
 def compose_path(generic_dir, file):
     return os.path.join(generic_dir, file)
@@ -51,3 +47,8 @@ def check_folder(generic_dir) -> bool:
         if os.path.isdir(os.path.join(generic_dir, f)):
             return True
     return False
+
+def lettura_file_config(model_name):
+    config = AutoConfig.from_pretrained(model_name)
+
+    print(config.to_dict())
