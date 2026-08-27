@@ -39,20 +39,34 @@ class JarvisServerIDE:
         utilizzando la tokenizzazione da `AutoTokenizer` per il modello selezionato.
         """
 
-        model_device_name_GPU, model_device_name_CPU, target_device = rileva_device()
+        model_device_name_GPU, model_device_name_CPU, gpu_device_id = rileva_device()
+
+        
+        
                 
         try :
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} sulla {model_device_name_GPU} da {self.model_path}")
+
+            if self.model_name:
+                target_device = "GPU"
+            else:
+                target_device = "HETERO:" + ",".join(gpu_device_id)
+
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {target_device}")
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {self.model_type}")
+
             if self.model_type == "llm":
                 if target_device == "GPU":
                     self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
                 else:
-                    self.pipe = ov_genai.LLMPipeline(self.model_path, target_device, MODEL_DISTRUIBUTION_POLICY="PIPELINE_PARALLEL")
+                    print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in llm multi gpu")
+                    self.pipe = ov_genai.LLMPipeline(self.model_path, target_device, MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL")
             else:
                 if target_device == "GPU":
                     self.pipe = ov_genai.VLMPipeline(self.model_path, target_device)
                 else:
-                    self.pipe = ov_genai.VLMPipeline(self.model_path, target_device, MODEL_DISTRUIBUTION_POLICY="PIPELINE_PARALLEL")
+                    print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in vlm multi gpu")
+                    self.pipe = ov_genai.VLMPipeline(self.model_path, target_device, MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL")
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                     self.model_path,
@@ -180,8 +194,13 @@ class JarvisServerIDE:
                         config.temperature = 0.0
                         config.presence_penalty = 1.5
                     else :
-                        config.do_sample = True
-                        config.temperature = 0.6
+                        config.temperature = 1.0
+                        config.top_p=0.95
+                        config.top_k=20
+                        config.min_p=0.0
+                        config.presence_penalty=1.5
+                        config.repetition_penalty=1.0
+                        #config.apply_chat_template = False
 
                     self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
 
@@ -200,6 +219,7 @@ class JarvisServerIDE:
                 token_count_risposta = 0
                 think_buffer = ""
                 start_time = time.time()
+                ttft = start_time
                 print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione in corso...")
 
                 while True :
@@ -375,7 +395,8 @@ class JarvisServerIDE:
                 messages,
                 tools=schemas if schemas else None,
                 tokenize=False,
-                add_generation_prompt=True
+                add_generation_prompt=True,
+                reasoning_effort="medium"
             )
             
             if schemas:
