@@ -1,0 +1,181 @@
+#0  __memcpy_avx_unaligned_erms () at ../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:461
+No locals.
+#1  0x00007fff69d6ae37 in ?? () from /usr/lib/x86_64-linux-gnu/intel-opencl/libigdrcl.so
+No symbol table info available.
+#2  0x00007fff69986f62 in ?? () from /usr/lib/x86_64-linux-gnu/intel-opencl/libigdrcl.so
+No symbol table info available.
+#3  0x00007fff6993acdb in ?? () from /usr/lib/x86_64-linux-gnu/intel-opencl/libigdrcl.so
+No symbol table info available.
+#4  0x00007fff6e0b4681 in ?? () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino_intel_gpu_plugin.so
+No symbol table info available.
+#5  0x00007fff6d78d503 in ?? () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino_intel_gpu_plugin.so
+No symbol table info available.
+#6  0x00007fff6d78ec37 in ?? () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino_intel_gpu_plugin.so
+No symbol table info available.
+#7  0x00007fff75043272 in ?? () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino_hetero_plugin.so
+No symbol table info available.
+#8  0x00007fffd42ee0ba in ?? () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino.so.2640
+No symbol table info available.
+#9  0x00007fffd42287c0 in ov::ITensor::copy_to(std::shared_ptr<ov::ITensor> const&) const () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino.so.2640
+No symbol table info available.
+#10 0x00007fffd422fc20 in ov::Tensor::copy_to(ov::Tensor) const () from /home/andrea/Progetti_VSC/openvino/install/runtime/lib/intel64/libopenvino.so.2640
+No symbol table info available.
+#11 0x00007fff7ab9d452 in ov::genai::LinearAttentionCacheManager::zero_blocks(std::set<unsigned long, std::less<unsigned long>, std::allocator<unsigned long> > const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#12 0x00007fff7abcf780 in ov::genai::Scheduler::schedule(std::vector<std::shared_ptr<ov::genai::SequenceGroup>, std::allocator<std::shared_ptr<ov::genai::SequenceGroup> > >&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#13 0x00007fff7ab956e4 in ov::genai::ContinuousBatchingPipeline::ContinuousBatchingImpl::step() () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#14 0x00007fff7ab90016 in ov::genai::ContinuousBatchingPipeline::ContinuousBatchingImpl::generate(std::vector<ov::Tensor, std::allocator<ov::Tensor> > const&, std::vector<ov::genai::GenerationConfig, std::allocator<ov::genai::GenerationConfig> > const&, std::variant<std::function<ov::genai::StreamingStatus (std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)>, std::shared_ptr<ov::genai::StreamerBase>, std::monostate> const&, std::optional<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > const&, std::optional<std::vector<std::pair<ov::Tensor, std::optional<long> >, std::allocator<std::pair<ov::Tensor, std::optional<long> > > > > const&, std::optional<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > const&, std::optional<std::vector<std::unordered_map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ov::Tensor, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, ov::Tensor> > >, std::allocator<std::unordered_map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ov::Tensor, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, ov::Tensor> > > > > > const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#15 0x00007fff7ab6c911 in ov::genai::ContinuousBatchingPipeline::IContinuousBatchingPipeline::generate(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, std::vector<std::vector<ov::Tensor, std::allocator<ov::Tensor> >, std::allocator<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > > const&, std::vector<std::vector<ov::Tensor, std::allocator<ov::Tensor> >, std::allocator<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > > const&, std::vector<std::vector<ov::genai::VideoMetadata, std::allocator<ov::genai::VideoMetadata> >, std::allocator<std::vector<ov::genai::VideoMetadata, std::allocator<ov::genai::VideoMetadata> > > > const&, std::vector<ov::genai::GenerationConfig, std::allocator<ov::genai::GenerationConfig> > const&, std::variant<std::function<ov::genai::StreamingStatus (std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)>, std::shared_ptr<ov::genai::StreamerBase>, std::monostate> const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#16 0x00007fff7ab651a0 in ov::genai::ContinuousBatchingPipeline::IContinuousBatchingPipeline::generate(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, std::vector<std::vector<ov::Tensor, std::allocator<ov::Tensor> >, std::allocator<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > > const&, std::vector<std::vector<ov::Tensor, std::allocator<ov::Tensor> >, std::allocator<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > > const&, std::vector<std::vector<ov::genai::VideoMetadata, std::allocator<ov::genai::VideoMetadata> >, std::allocator<std::vector<ov::genai::VideoMetadata, std::allocator<ov::genai::VideoMetadata> > > > const&, std::vector<std::vector<ov::Tensor, std::allocator<ov::Tensor> >, std::allocator<std::vector<ov::Tensor, std::allocator<ov::Tensor> > > > const&, std::vector<ov::genai::GenerationConfig, std::allocator<ov::genai::GenerationConfig> > const&, std::variant<std::function<ov::genai::StreamingStatus (std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)>, std::shared_ptr<ov::genai::StreamerBase>, std::monostate> const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#17 0x00007fff7ab3d77d in ov::genai::ContinuousBatchingPipeline::generate(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ov::Any, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, ov::Any> > > const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#18 0x00007fff7b0be721 in ov::genai::VLMPipeline::VLMContinuousBatchingAdapter::generate(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::vector<ov::Tensor, std::allocator<ov::Tensor> > const&, std::vector<ov::Tensor, std::allocator<ov::Tensor> > const&, std::vector<ov::Tensor, std::allocator<ov::Tensor> > const&, std::vector<ov::genai::VideoMetadata, std::allocator<ov::genai::VideoMetadata> > const&, ov::genai::GenerationConfig const&, std::variant<std::function<ov::genai::StreamingStatus (std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)>, std::shared_ptr<ov::genai::StreamerBase>, std::monostate> const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#19 0x00007fff7b0c145b in ov::genai::VLMPipeline::VLMBackend::generate(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ov::Any, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, ov::Any> > > const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#20 0x00007fff7b0a7376 in ov::genai::VLMPipeline::generate(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ov::Any, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, ov::Any> > > const&) () from /home/andrea/Progetti_VSC/openvino.genai/install/runtime/lib/intel64/libopenvino_genai.so.2640
+No symbol table info available.
+#21 0x00007fff7b891413 in ?? () from /home/andrea/Progetti_VSC/openvino.genai/install/python/openvino_genai/py_openvino_genai.cpython-311-x86_64-linux-gnu.so
+No symbol table info available.
+#22 0x00007fff7b848cb1 in ?? () from /home/andrea/Progetti_VSC/openvino.genai/install/python/openvino_genai/py_openvino_genai.cpython-311-x86_64-linux-gnu.so
+No symbol table info available.
+#23 0x00007fff7b6e55b3 in ?? () from /home/andrea/Progetti_VSC/openvino.genai/install/python/openvino_genai/py_openvino_genai.cpython-311-x86_64-linux-gnu.so
+No symbol table info available.
+#24 0x0000000000528657 in cfunction_call (func=0x7fff7ba50090, args=<optimized out>, kwargs=<optimized out>) at /usr/local/src/conda/python-3.11.14/Objects/methodobject.c:542
+        tstate = 0x7ff9f0005a90
+        flags = <optimized out>
+        meth = <optimized out>
+        self = <optimized out>
+        result = <optimized out>
+#25 0x000000000050400c in _PyObject_MakeTpCall (tstate=0x7ff9f0005a90, callable=0x7fff7ba50090, args=<optimized out>, nargs=<optimized out>, keywords=0x7fff7c5d22c0) at /usr/local/src/conda/python-3.11.14/Objects/call.c:214
+        call = <optimized out>
+        argstuple = 0x7fff7b5280c0
+        kwdict = 0x7fff7bc914c0
+        result = 0x0
+#26 0x0000000000511616 in _PyEval_EvalFrameDefault (tstate=tstate@entry=0x7ff9f0005a90, frame=<optimized out>, frame@entry=0x7fff861f1188, throwflag=throwflag@entry=0) at /usr/local/src/conda/python-3.11.14/Python/ceval.c:4769
+        is_meth = <optimized out>
+        total_args = 4
+        function = 0x7fff7ba50090
+        positional_args = <optimized out>
+        res = <optimized out>
+        opcode = <optimized out>
+        oparg = <optimized out>
+        eval_breaker = <optimized out>
+        cframe = {use_tracing = 0 '\000', current_frame = 0x7fff861f1188, previous = 0x7ffa937fdcf0}
+        call_shape = {kwnames = 0x7fff7c5d22c0}
+        prev_cframe = <optimized out>
+        names = <optimized out>
+        consts = <optimized out>
+        first_instr = <optimized out>
+        next_instr = 0xb185416
+        stack_pointer = <optimized out>
+        exception_unwind = <optimized out>
+        dying = <optimized out>
+        __func__ = "_PyEval_EvalFrameDefault"
+        opcode_targets = {0x432564 <_PyEval_EvalFrameDefault-911884>, 0x511923 <_PyEval_EvalFrameDefault+2483>, 0x511533 <_PyEval_EvalFrameDefault+1475>, 0x5139f3 <_PyEval_EvalFrameDefault+10883>, 0x514b3e <_PyEval_EvalFrameDefault+15310>, 0x512941 <_PyEval_EvalFrameDefault+6609>, 0x51456a <_PyEval_EvalFrameDefault+13818>, 0x51610c <_PyEval_EvalFrameDefault+20892>, 0x511f78 <_PyEval_EvalFrameDefault+4104>, 0x512ee4 <_PyEval_EvalFrameDefault+8052>, 0x5178c3 <_PyEval_EvalFrameDefault+26963>, 0x515a79 <_PyEval_EvalFrameDefault+19209>, 0x515b5f <_PyEval_EvalFrameDefault+19439>, 0x5136cc <_PyEval_EvalFrameDefault+10076>, 0x513f45 <_PyEval_EvalFrameDefault+12245>, 0x516bab <_PyEval_EvalFrameDefault+23611>, 0x512f68 <_PyEval_EvalFrameDefault+8184>, 0x511ee9 <_PyEval_EvalFrameDefault+3961>, 0x513eb1 <_PyEval_EvalFrameDefault+12097>, 0x5161c0 <_PyEval_EvalFrameDefault+21072>, 0x512dfc <_PyEval_EvalFrameDefault+7820>, 0x514a97 <_PyEval_EvalFrameDefault+15143>, 0x51156e <_PyEval_EvalFrameDefault+1534>, 0x511c12 <_PyEval_EvalFrameDefault+3234>, 0x512a4a <_PyEval_EvalFrameDefault+6874>, 0x514f77 <_PyEval_EvalFrameDefault+16391>, 0x5130a9 <_PyEval_EvalFrameDefault+8505>, 0x514c9f <_PyEval_EvalFrameDefault+15663>, 0x511ac0 <_PyEval_EvalFrameDefault+2896>, 0x5137a0 <_PyEval_EvalFrameDefault+10288>, 0x5173ae <_PyEval_EvalFrameDefault+25662>, 0x516b50 <_PyEval_EvalFrameDefault+23520>, 0x516af6 <_PyEval_EvalFrameDefault+23430>, 0x51720f <_PyEval_EvalFrameDefault+25247>, 0x513a15 <_PyEval_EvalFrameDefault+10917>, 0x515559 <_PyEval_EvalFrameDefault+17897>, 0x5155b3 <_PyEval_EvalFrameDefault+17987>, 0x4302a6 <_PyEval_EvalFrameDefault-920778>, 0x5114eb <_PyEval_EvalFrameDefault+1403>, 0x511e5d <_PyEval_EvalFrameDefault+3821>, 0x511d78 <_PyEval_EvalFrameDefault+3592>, 0x5131a0 <_PyEval_EvalFrameDefault+8752>, 0x5127e0 <_PyEval_EvalFrameDefault+6256>, 0x514eb1 <_PyEval_EvalFrameDefault+16193>, 0x512779 <_PyEval_EvalFrameDefault+6153>, 0x511df4 <_PyEval_EvalFrameDefault+3716>, 0x51115c <_PyEval_EvalFrameDefault+492>, 0x5163e9 <_PyEval_EvalFrameDefault+21625>, 0x511323 <_PyEval_EvalFrameDefault+947>, 0x516a3f <_PyEval_EvalFrameDefault+23247>, 0x4304c2 <_PyEval_EvalFrameDefault-920238>, 0x430566 <_PyEval_EvalFrameDefault-920074>, 0x42fd54 <_PyEval_EvalFrameDefault-922140>, 0x515941 <_PyEval_EvalFrameDefault+18897>, 0x4328a0 <_PyEval_EvalFrameDefault-911056>, 0x51173e <_PyEval_EvalFrameDefault+1998>, 0x5122b0 <_PyEval_EvalFrameDefault+4928>, 0x515f54 <_PyEval_EvalFrameDefault+20452>, 0x515850 <_PyEval_EvalFrameDefault+18656>, 0x5118b9 <_PyEval_EvalFrameDefault+2377>, 0x5174eb <_PyEval_EvalFrameDefault+25979>, 0x515c5f <_PyEval_EvalFrameDefault+19695>, 0x513b75 <_PyEval_EvalFrameDefault+11269>, 0x512054 <_PyEval_EvalFrameDefault+4324>, 0x511834 <_PyEval_EvalFrameDefault+2244>, 0x512229 <_PyEval_EvalFrameDefault+4793>, 0x51387c <_PyEval_EvalFrameDefault+10508>, 0x514615 <_PyEval_EvalFrameDefault+13989>, 0x51313d <_PyEval_EvalFrameDefault+8653>, 0x516f5c <_PyEval_EvalFrameDefault+24556>, 0x51775b <_PyEval_EvalFrameDefault+26603>, 0x51747f <_PyEval_EvalFrameDefault+25871>, 0x513d13 <_PyEval_EvalFrameDefault+11683>, 0x512367 <_PyEval_EvalFrameDefault+5111>, 0x43266c <_PyEval_EvalFrameDefault-911620>, 0x51541b <_PyEval_EvalFrameDefault+17579>, 0x5119ca <_PyEval_EvalFrameDefault+2650>, 0x51284e <_PyEval_EvalFrameDefault+6366>, 0x5132ec <_PyEval_EvalFrameDefault+9084>, 0x5140ee <_PyEval_EvalFrameDefault+12670>, 0x512576 <_PyEval_EvalFrameDefault+5638>, 0x5135c2 <_PyEval_EvalFrameDefault+9810>, 0x5177e8 <_PyEval_EvalFrameDefault+26744>, 0x5111cd <_PyEval_EvalFrameDefault+605>, 0x516c0d <_PyEval_EvalFrameDefault+23709>, 0x517a33 <_PyEval_EvalFrameDefault+27331>, 0x51303e <_PyEval_EvalFrameDefault+8398>, 0x432cb3 <_PyEval_EvalFrameDefault-910013>, 0x432715 <_PyEval_EvalFrameDefault-911451>, 0x5156b9 <_PyEval_EvalFrameDefault+18249>, 0x51513d <_PyEval_EvalFrameDefault+16845>, 0x517419 <_PyEval_EvalFrameDefault+25769>, 0x517927 <_PyEval_EvalFrameDefault+27063>, 0x51148c <_PyEval_EvalFrameDefault+1308>, 0x517641 <_PyEval_EvalFrameDefault+26321>, 0x5156ac <_PyEval_EvalFrameDefault+18236>, 0x515267 <_PyEval_EvalFrameDefault+17143>, 0x517ae5 <_PyEval_EvalFrameDefault+27509>, 0x432f66 <_PyEval_EvalFrameDefault-909322>, 0x51348f <_PyEval_EvalFrameDefault+9503>, 0x5110c9 <_PyEval_EvalFrameDefault+345>, 0x515adc <_PyEval_EvalFrameDefault+19308>, 0x5134d5 <_PyEval_EvalFrameDefault+9573>, 0x51407e <_PyEval_EvalFrameDefault+12558>, 0x5168f0 <_PyEval_EvalFrameDefault+22912>, 0x513c04 <_PyEval_EvalFrameDefault+11412>, 0x514e0e <_PyEval_EvalFrameDefault+16030>, 0x5133fa <_PyEval_EvalFrameDefault+9354>, 0x5174f8 <_PyEval_EvalFrameDefault+25992>, 0x517934 <_PyEval_EvalFrameDefault+27076>, 0x512a17 <_PyEval_EvalFrameDefault+6823>, 0x514a47 <_PyEval_EvalFrameDefault+15063>, 0x5154ea <_PyEval_EvalFrameDefault+17786>, 0x514782 <_PyEval_EvalFrameDefault+14354>, 0x5117d5 <_PyEval_EvalFrameDefault+2149>, 0x511969 <_PyEval_EvalFrameDefault+2553>, 0x51494d <_PyEval_EvalFrameDefault+14813>, 0x512cee <_PyEval_EvalFrameDefault+7550>, 0x513232 <_PyEval_EvalFrameDefault+8898>, 0x516fd6 <_PyEval_EvalFrameDefault+24678>, 0x513407 <_PyEval_EvalFrameDefault+9367>, 0x515050 <_PyEval_EvalFrameDefault+16608>, 0x5121a9 <_PyEval_EvalFrameDefault+4665>, 0x5141cd <_PyEval_EvalFrameDefault+12893>, 0x51107b <_PyEval_EvalFrameDefault+267>, 0x511432 <_PyEval_EvalFrameDefault+1218>, 0x51785b <_PyEval_EvalFrameDefault+26859>, 0x515fcc <_PyEval_EvalFrameDefault+20572>, 0x512e91 <_PyEval_EvalFrameDefault+7969>, 0x512f15 <_PyEval_EvalFrameDefault+8101>, 0x5165cf <_PyEval_EvalFrameDefault+22111>, 0x42fedd <_PyEval_EvalFrameDefault-921747>, 0x5148a6 <_PyEval_EvalFrameDefault+14646>, 0x513fe9 <_PyEval_EvalFrameDefault+12409>, 0x514195 <_PyEval_EvalFrameDefault+12837>, 0x514323 <_PyEval_EvalFrameDefault+13235>, 0x5150ee <_PyEval_EvalFrameDefault+16766>, 0x51125b <_PyEval_EvalFrameDefault+747>, 0x5158ef <_PyEval_EvalFrameDefault+18815>, 0x43244c <_PyEval_EvalFrameDefault-912164>, 0x5171c5 <_PyEval_EvalFrameDefault+25173>, 0x5124fa <_PyEval_EvalFrameDefault+5514>, 0x515722 <_PyEval_EvalFrameDefault+18354>, 0x511bb4 <_PyEval_EvalFrameDefault+3140>, 0x515f19 <_PyEval_EvalFrameDefault+20393>, 0x512498 <_PyEval_EvalFrameDefault+5416>, 0x5143ea <_PyEval_EvalFrameDefault+13434>, 0x516078 <_PyEval_EvalFrameDefault+20744>, 0x516eca <_PyEval_EvalFrameDefault+24410>, 0x5120df <_PyEval_EvalFrameDefault+4463>, 0x511111 <_PyEval_EvalFrameDefault+417>, 0x515cd0 <_PyEval_EvalFrameDefault+19808>, 0x5164d0 <_PyEval_EvalFrameDefault+21856>, 0x514e1b <_PyEval_EvalFrameDefault+16043>, 0x512d5f <_PyEval_EvalFrameDefault+7663>, 0x514f84 <_PyEval_EvalFrameDefault+16404>, 0x5167e7 <_PyEval_EvalFrameDefault+22647>, 0x5152d5 <_PyEval_EvalFrameDefault+17253>, 0x513afa <_PyEval_EvalFrameDefault+11146>, 0x515dc0 <_PyEval_EvalFrameDefault+20048>, 0x514c92 <_PyEval_EvalFrameDefault+15650>, 0x5112b0 <_PyEval_EvalFrameDefault+832>, 0x5169ca <_PyEval_EvalFrameDefault+23130>, 0x51695f <_PyEval_EvalFrameDefault+23023>, 0x51563d <_PyEval_EvalFrameDefault+18125>, 0x5179ba <_PyEval_EvalFrameDefault+27210>, 0x5140e1 <_PyEval_EvalFrameDefault+12657>, 0x5126f8 <_PyEval_EvalFrameDefault+6024>, 0x5151c5 <_PyEval_EvalFrameDefault+16981>, 0x513a45 <_PyEval_EvalFrameDefault+10965>, 0x51427f <_PyEval_EvalFrameDefault+13071>, 0x5116ed <_PyEval_EvalFrameDefault+1917>, 0x51344d <_PyEval_EvalFrameDefault+9437>, 0x515ecb <_PyEval_EvalFrameDefault+20315>, 0x5175f0 <_PyEval_EvalFrameDefault+26240>, 0x514c17 <_PyEval_EvalFrameDefault+15527>, 0x515bca <_PyEval_EvalFrameDefault+19546>, 0x5176b8 <_PyEval_EvalFrameDefault+26440>, 0x5162f5 <_PyEval_EvalFrameDefault+21381>, 0x514465 <_PyEval_EvalFrameDefault+13557>, 0x512c70 <_PyEval_EvalFrameDefault+7424>, 0x432e4a <_PyEval_EvalFrameDefault-909606> <repeats 74 times>, 0x517059 <_PyEval_EvalFrameDefault+24809>}
+#27 0x0000000000538d03 in _PyEval_EvalFrame (throwflag=0, frame=0x7fff861f1188, tstate=0x7ff9f0005a90) at /usr/local/src/conda/python-3.11.14/Include/internal/pycore_ceval.h:73
+No locals.
+#28 _PyEval_Vector (kwnames=<optimized out>, argcount=0, args=0x88f190 <_PyRuntime+58928>, locals=0x0, func=<optimized out>, tstate=0x7ff9f0005a90) at /usr/local/src/conda/python-3.11.14/Python/ceval.c:6434
+        frame = 0x7fff861f1188
+        retval = <optimized out>
+        frame = <optimized out>
+        retval = <optimized out>
+        i = <optimized out>
+        kwcount = <optimized out>
+        i = <optimized out>
+#29 _PyFunction_Vectorcall (func=<optimized out>, stack=0x88f190 <_PyRuntime+58928>, nargsf=<optimized out>, kwnames=<optimized out>) at /usr/local/src/conda/python-3.11.14/Objects/call.c:393
+        f = <optimized out>
+        nargs = 0
+        tstate = 0x7ff9f0005a90
+#30 0x00000000005157bb in do_call_core (use_tracing=<optimized out>, kwdict=0x7fff7bc99540, callargs=0x88f178 <_PyRuntime+58904>, func=0x7fff7b5af920, tstate=<optimized out>) at /usr/local/src/conda/python-3.11.14/Python/ceval.c:7349
+        result = <optimized out>
+        result = <optimized out>
+        op = <optimized out>
+        dealloc = <optimized out>
+        nargs = <optimized out>
+        self = <optimized out>
+        op = <optimized out>
+        dealloc = <optimized out>
+        op = <optimized out>
+        dealloc = <optimized out>
+#31 _PyEval_EvalFrameDefault (tstate=tstate@entry=0x7ff9f0005a90, frame=<optimized out>, frame@entry=0x7fff861f1020, throwflag=throwflag@entry=0) at /usr/local/src/conda/python-3.11.14/Python/ceval.c:5376
+        kwargs = 0x7fff7bc99540
+        __atomic_load_tmp = <optimized out>
+        func = 0x7fff7b5af920
+        callargs = 0x88f178 <_PyRuntime+58904>
+        op = <optimized out>
+        dealloc = <optimized out>
+        op = <optimized out>
+        dealloc = <optimized out>
+        xop = <optimized out>
+        op = <optimized out>
+        dealloc = <optimized out>
+        result = <optimized out>
+        __atomic_load_ptr = <optimized out>
+        opcode = <optimized out>
+        oparg = <optimized out>
+        eval_breaker = <optimized out>
+        cframe = {use_tracing = 0 '\000', current_frame = 0x7fff861f1110, previous = 0x7ff9f0005be0}
+        call_shape = {kwnames = 0x0}
+        prev_cframe = <optimized out>
+        names = <optimized out>
+        consts = <optimized out>
+        first_instr = <optimized out>
+        next_instr = 0x7ffff75217a6
+        stack_pointer = <optimized out>
+        exception_unwind = <optimized out>
+        dying = <optimized out>
+        __func__ = "_PyEval_EvalFrameDefault"
+        opcode_targets = {0x432564 <_PyEval_EvalFrameDefault-911884>, 0x511923 <_PyEval_EvalFrameDefault+2483>, 0x511533 <_PyEval_EvalFrameDefault+1475>, 0x5139f3 <_PyEval_EvalFrameDefault+10883>, 0x514b3e <_PyEval_EvalFrameDefault+15310>, 0x512941 <_PyEval_EvalFrameDefault+6609>, 0x51456a <_PyEval_EvalFrameDefault+13818>, 0x51610c <_PyEval_EvalFrameDefault+20892>, 0x511f78 <_PyEval_EvalFrameDefault+4104>, 0x512ee4 <_PyEval_EvalFrameDefault+8052>, 0x5178c3 <_PyEval_EvalFrameDefault+26963>, 0x515a79 <_PyEval_EvalFrameDefault+19209>, 0x515b5f <_PyEval_EvalFrameDefault+19439>, 0x5136cc <_PyEval_EvalFrameDefault+10076>, 0x513f45 <_PyEval_EvalFrameDefault+12245>, 0x516bab <_PyEval_EvalFrameDefault+23611>, 0x512f68 <_PyEval_EvalFrameDefault+8184>, 0x511ee9 <_PyEval_EvalFrameDefault+3961>, 0x513eb1 <_PyEval_EvalFrameDefault+12097>, 0x5161c0 <_PyEval_EvalFrameDefault+21072>, 0x512dfc <_PyEval_EvalFrameDefault+7820>, 0x514a97 <_PyEval_EvalFrameDefault+15143>, 0x51156e <_PyEval_EvalFrameDefault+1534>, 0x511c12 <_PyEval_EvalFrameDefault+3234>, 0x512a4a <_PyEval_EvalFrameDefault+6874>, 0x514f77 <_PyEval_EvalFrameDefault+16391>, 0x5130a9 <_PyEval_EvalFrameDefault+8505>, 0x514c9f <_PyEval_EvalFrameDefault+15663>, 0x511ac0 <_PyEval_EvalFrameDefault+2896>, 0x5137a0 <_PyEval_EvalFrameDefault+10288>, 0x5173ae <_PyEval_EvalFrameDefault+25662>, 0x516b50 <_PyEval_EvalFrameDefault+23520>, 0x516af6 <_PyEval_EvalFrameDefault+23430>, 0x51720f <_PyEval_EvalFrameDefault+25247>, 0x513a15 <_PyEval_EvalFrameDefault+10917>, 0x515559 <_PyEval_EvalFrameDefault+17897>, 0x5155b3 <_PyEval_EvalFrameDefault+17987>, 0x4302a6 <_PyEval_EvalFrameDefault-920778>, 0x5114eb <_PyEval_EvalFrameDefault+1403>, 0x511e5d <_PyEval_EvalFrameDefault+3821>, 0x511d78 <_PyEval_EvalFrameDefault+3592>, 0x5131a0 <_PyEval_EvalFrameDefault+8752>, 0x5127e0 <_PyEval_EvalFrameDefault+6256>, 0x514eb1 <_PyEval_EvalFrameDefault+16193>, 0x512779 <_PyEval_EvalFrameDefault+6153>, 0x511df4 <_PyEval_EvalFrameDefault+3716>, 0x51115c <_PyEval_EvalFrameDefault+492>, 0x5163e9 <_PyEval_EvalFrameDefault+21625>, 0x511323 <_PyEval_EvalFrameDefault+947>, 0x516a3f <_PyEval_EvalFrameDefault+23247>, 0x4304c2 <_PyEval_EvalFrameDefault-920238>, 0x430566 <_PyEval_EvalFrameDefault-920074>, 0x42fd54 <_PyEval_EvalFrameDefault-922140>, 0x515941 <_PyEval_EvalFrameDefault+18897>, 0x4328a0 <_PyEval_EvalFrameDefault-911056>, 0x51173e <_PyEval_EvalFrameDefault+1998>, 0x5122b0 <_PyEval_EvalFrameDefault+4928>, 0x515f54 <_PyEval_EvalFrameDefault+20452>, 0x515850 <_PyEval_EvalFrameDefault+18656>, 0x5118b9 <_PyEval_EvalFrameDefault+2377>, 0x5174eb <_PyEval_EvalFrameDefault+25979>, 0x515c5f <_PyEval_EvalFrameDefault+19695>, 0x513b75 <_PyEval_EvalFrameDefault+11269>, 0x512054 <_PyEval_EvalFrameDefault+4324>, 0x511834 <_PyEval_EvalFrameDefault+2244>, 0x512229 <_PyEval_EvalFrameDefault+4793>, 0x51387c <_PyEval_EvalFrameDefault+10508>, 0x514615 <_PyEval_EvalFrameDefault+13989>, 0x51313d <_PyEval_EvalFrameDefault+8653>, 0x516f5c <_PyEval_EvalFrameDefault+24556>, 0x51775b <_PyEval_EvalFrameDefault+26603>, 0x51747f <_PyEval_EvalFrameDefault+25871>, 0x513d13 <_PyEval_EvalFrameDefault+11683>, 0x512367 <_PyEval_EvalFrameDefault+5111>, 0x43266c <_PyEval_EvalFrameDefault-911620>, 0x51541b <_PyEval_EvalFrameDefault+17579>, 0x5119ca <_PyEval_EvalFrameDefault+2650>, 0x51284e <_PyEval_EvalFrameDefault+6366>, 0x5132ec <_PyEval_EvalFrameDefault+9084>, 0x5140ee <_PyEval_EvalFrameDefault+12670>, 0x512576 <_PyEval_EvalFrameDefault+5638>, 0x5135c2 <_PyEval_EvalFrameDefault+9810>, 0x5177e8 <_PyEval_EvalFrameDefault+26744>, 0x5111cd <_PyEval_EvalFrameDefault+605>, 0x516c0d <_PyEval_EvalFrameDefault+23709>, 0x517a33 <_PyEval_EvalFrameDefault+27331>, 0x51303e <_PyEval_EvalFrameDefault+8398>, 0x432cb3 <_PyEval_EvalFrameDefault-910013>, 0x432715 <_PyEval_EvalFrameDefault-911451>, 0x5156b9 <_PyEval_EvalFrameDefault+18249>, 0x51513d <_PyEval_EvalFrameDefault+16845>, 0x517419 <_PyEval_EvalFrameDefault+25769>, 0x517927 <_PyEval_EvalFrameDefault+27063>, 0x51148c <_PyEval_EvalFrameDefault+1308>, 0x517641 <_PyEval_EvalFrameDefault+26321>, 0x5156ac <_PyEval_EvalFrameDefault+18236>, 0x515267 <_PyEval_EvalFrameDefault+17143>, 0x517ae5 <_PyEval_EvalFrameDefault+27509>, 0x432f66 <_PyEval_EvalFrameDefault-909322>, 0x51348f <_PyEval_EvalFrameDefault+9503>, 0x5110c9 <_PyEval_EvalFrameDefault+345>, 0x515adc <_PyEval_EvalFrameDefault+19308>, 0x5134d5 <_PyEval_EvalFrameDefault+9573>, 0x51407e <_PyEval_EvalFrameDefault+12558>, 0x5168f0 <_PyEval_EvalFrameDefault+22912>, 0x513c04 <_PyEval_EvalFrameDefault+11412>, 0x514e0e <_PyEval_EvalFrameDefault+16030>, 0x5133fa <_PyEval_EvalFrameDefault+9354>, 0x5174f8 <_PyEval_EvalFrameDefault+25992>, 0x517934 <_PyEval_EvalFrameDefault+27076>, 0x512a17 <_PyEval_EvalFrameDefault+6823>, 0x514a47 <_PyEval_EvalFrameDefault+15063>, 0x5154ea <_PyEval_EvalFrameDefault+17786>, 0x514782 <_PyEval_EvalFrameDefault+14354>, 0x5117d5 <_PyEval_EvalFrameDefault+2149>, 0x511969 <_PyEval_EvalFrameDefault+2553>, 0x51494d <_PyEval_EvalFrameDefault+14813>, 0x512cee <_PyEval_EvalFrameDefault+7550>, 0x513232 <_PyEval_EvalFrameDefault+8898>, 0x516fd6 <_PyEval_EvalFrameDefault+24678>, 0x513407 <_PyEval_EvalFrameDefault+9367>, 0x515050 <_PyEval_EvalFrameDefault+16608>, 0x5121a9 <_PyEval_EvalFrameDefault+4665>, 0x5141cd <_PyEval_EvalFrameDefault+12893>, 0x51107b <_PyEval_EvalFrameDefault+267>, 0x511432 <_PyEval_EvalFrameDefault+1218>, 0x51785b <_PyEval_EvalFrameDefault+26859>, 0x515fcc <_PyEval_EvalFrameDefault+20572>, 0x512e91 <_PyEval_EvalFrameDefault+7969>, 0x512f15 <_PyEval_EvalFrameDefault+8101>, 0x5165cf <_PyEval_EvalFrameDefault+22111>, 0x42fedd <_PyEval_EvalFrameDefault-921747>, 0x5148a6 <_PyEval_EvalFrameDefault+14646>, 0x513fe9 <_PyEval_EvalFrameDefault+12409>, 0x514195 <_PyEval_EvalFrameDefault+12837>, 0x514323 <_PyEval_EvalFrameDefault+13235>, 0x5150ee <_PyEval_EvalFrameDefault+16766>, 0x51125b <_PyEval_EvalFrameDefault+747>, 0x5158ef <_PyEval_EvalFrameDefault+18815>, 0x43244c <_PyEval_EvalFrameDefault-912164>, 0x5171c5 <_PyEval_EvalFrameDefault+25173>, 0x5124fa <_PyEval_EvalFrameDefault+5514>, 0x515722 <_PyEval_EvalFrameDefault+18354>, 0x511bb4 <_PyEval_EvalFrameDefault+3140>, 0x515f19 <_PyEval_EvalFrameDefault+20393>, 0x512498 <_PyEval_EvalFrameDefault+5416>, 0x5143ea <_PyEval_EvalFrameDefault+13434>, 0x516078 <_PyEval_EvalFrameDefault+20744>, 0x516eca <_PyEval_EvalFrameDefault+24410>, 0x5120df <_PyEval_EvalFrameDefault+4463>, 0x511111 <_PyEval_EvalFrameDefault+417>, 0x515cd0 <_PyEval_EvalFrameDefault+19808>, 0x5164d0 <_PyEval_EvalFrameDefault+21856>, 0x514e1b <_PyEval_EvalFrameDefault+16043>, 0x512d5f <_PyEval_EvalFrameDefault+7663>, 0x514f84 <_PyEval_EvalFrameDefault+16404>, 0x5167e7 <_PyEval_EvalFrameDefault+22647>, 0x5152d5 <_PyEval_EvalFrameDefault+17253>, 0x513afa <_PyEval_EvalFrameDefault+11146>, 0x515dc0 <_PyEval_EvalFrameDefault+20048>, 0x514c92 <_PyEval_EvalFrameDefault+15650>, 0x5112b0 <_PyEval_EvalFrameDefault+832>, 0x5169ca <_PyEval_EvalFrameDefault+23130>, 0x51695f <_PyEval_EvalFrameDefault+23023>, 0x51563d <_PyEval_EvalFrameDefault+18125>, 0x5179ba <_PyEval_EvalFrameDefault+27210>, 0x5140e1 <_PyEval_EvalFrameDefault+12657>, 0x5126f8 <_PyEval_EvalFrameDefault+6024>, 0x5151c5 <_PyEval_EvalFrameDefault+16981>, 0x513a45 <_PyEval_EvalFrameDefault+10965>, 0x51427f <_PyEval_EvalFrameDefault+13071>, 0x5116ed <_PyEval_EvalFrameDefault+1917>, 0x51344d <_PyEval_EvalFrameDefault+9437>, 0x515ecb <_PyEval_EvalFrameDefault+20315>, 0x5175f0 <_PyEval_EvalFrameDefault+26240>, 0x514c17 <_PyEval_EvalFrameDefault+15527>, 0x515bca <_PyEval_EvalFrameDefault+19546>, 0x5176b8 <_PyEval_EvalFrameDefault+26440>, 0x5162f5 <_PyEval_EvalFrameDefault+21381>, 0x514465 <_PyEval_EvalFrameDefault+13557>, 0x512c70 <_PyEval_EvalFrameDefault+7424>, 0x432e4a <_PyEval_EvalFrameDefault-909606> <repeats 74 times>, 0x517059 <_PyEval_EvalFrameDefault+24809>}
+#32 0x000000000055822f in _PyEval_EvalFrame (throwflag=0, frame=0x7fff861f1020, tstate=0x7ff9f0005a90) at /usr/local/src/conda/python-3.11.14/Include/internal/pycore_ceval.h:73
+No locals.
+#33 _PyEval_Vector (kwnames=<optimized out>, argcount=<optimized out>, args=<optimized out>, locals=0x0, func=0x7ffff7569f80, tstate=0x7ff9f0005a90) at /usr/local/src/conda/python-3.11.14/Python/ceval.c:6434
+        frame = 0x7fff861f1020
+        retval = <optimized out>
+        frame = <optimized out>
+        retval = <optimized out>
+        i = <optimized out>
+        kwcount = <optimized out>
+        i = <optimized out>
+#34 _PyFunction_Vectorcall (kwnames=<optimized out>, nargsf=<optimized out>, stack=<optimized out>, func=0x7ffff7569f80) at /usr/local/src/conda/python-3.11.14/Objects/call.c:393
+        f = 0x7ffff7569f80
+        nargs = <optimized out>
+        tstate = 0x7ff9f0005a90
+        f = <optimized out>
+        nargs = <optimized out>
+        tstate = <optimized out>
+#35 _PyObject_VectorcallTstate (tstate=0x7ff9f0005a90, callable=0x7ffff7569f80, args=<optimized out>, nargsf=<optimized out>, kwnames=<optimized out>) at /usr/local/src/conda/python-3.11.14/Include/internal/pycore_call.h:92
+        func = <optimized out>
+        res = <optimized out>
+        nargs = <optimized out>
+#36 0x0000000000557a70 in method_vectorcall (method=<optimized out>, args=0x88f190 <_PyRuntime+58928>, nargsf=<optimized out>, kwnames=<optimized out>) at /usr/local/src/conda/python-3.11.14/Objects/classobject.c:67
+        nkwargs = <optimized out>
+        totalargs = <optimized out>
+        newargs_stack = {0xb98, 0xa1fc948, 0x7ff9f0005a90, 0x455a1896b0132a00, 0xffffffffffffff88}
+        newargs = <optimized out>
+        tstate = 0x7ff9f0005a90
+        self = 0x7fff7bca0150
+        func = 0x7ffff7569f80
+        nargs = 0
+        result = <optimized out>
+#37 0x000000000062ab33 in thread_run (boot_raw=0x7ff9f02cc0e0) at /usr/local/src/conda/python-3.11.14/Modules/_threadmodule.c:1124
+        boot = 0x7ff9f02cc0e0
+        tstate = 0x7ff9f0005a90
+        res = <optimized out>
+#38 0x00000000005fa114 in pythread_wrapper (arg=<optimized out>) at /usr/local/src/conda/python-3.11.14/Python/thread_pthread.h:241
+        callback = <optimized out>
+        func = 0x62aad0 <thread_run>
+        func_arg = 0x7ff9f02cc0e0
+#39 0x00007ffff7c9cb84 in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:447
+        ret = <optimized out>
+        pd = <optimized out>
+        out = <optimized out>
+        unwind_buf = {cancel_jmp_buf = {{jmp_buf = {140714193184448, 1279916294252039763, 140714193184448, -120, 0, 140714201572496, 1279916294273011283, 1281806784595136083}, mask_was_saved = 0}}, priv = {pad = {0x0, 0x0, 0x0, 0x0}, data = {prev = 0x0, cleanup = 0x0, canceltype = 0}}}
+        not_first_call = <optimized out>
+#40 0x00007ffff7d29d6c in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:78
+No locals.
