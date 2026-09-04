@@ -2,6 +2,7 @@ import openvino as ov
 import os
 import re
 from transformers import AutoConfig
+from utilities.color_logger import ColoreLog
 
 def rileva_device():
     core = ov.Core()
@@ -48,7 +49,17 @@ def check_folder(generic_dir) -> bool:
             return True
     return False
 
-def lettura_file_config(model_name):
-    config = AutoConfig.from_pretrained(model_name)
+def recupero_dimensione_modello(model_path):
+    return "Da finire"
 
-    print(config.to_dict())
+def debug_context_quantization(model_path):
+
+    core = ov.Core()
+    devices = core.available_devices
+
+    for device in devices :
+        if "GPU" in device :
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Device: {device} -> [DEFAULT] KV_CACHE_PRECISION: {core.get_property(device, 'KV_CACHE_PRECISION')} - [DEFAULT] DYNAMIC_QUANTIZATION_GROUP_SIZE: {core.get_property(device, 'DYNAMIC_QUANTIZATION_GROUP_SIZE')}")
+
+
+    
