@@ -40,32 +40,36 @@ class JarvisServerIDE:
         """
 
         model_device_name_GPU, model_device_name_CPU, gpu_device_id = rileva_device()
-
-        
-        
-                
+     
         try :
-            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} sulla {model_device_name_GPU} da {self.model_path}")
+            print(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET} Desideri utilizzare il metodo di caricamento HETERO? s/n Premendo INVIO si utilizzarà il metodo HETERO")
+            user_input_caricamento_gpu = input()
 
-            if self.model_name:
+            if user_input_caricamento_gpu.lower() == "s" or not user_input_caricamento_gpu :
+                target_device = "HETERO:" + ",".join(gpu_device_id)
+            elif user_input_caricamento_gpu.lower() == "n":
                 target_device = "GPU"
             else:
-                target_device = "HETERO:" + ",".join(gpu_device_id)
+                print(f"")    
 
             print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {target_device}")
             print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {self.model_type}")
 
             if self.model_type == "llm":
                 if target_device == "GPU":
+                    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} sulla {model_device_name_GPU[0]} da {self.model_path}")
                     self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
                 else:
                     print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in llm multi gpu")
+                    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} su entrambe le {model_device_name_GPU[0]} da {self.model_path}")
                     self.pipe = ov_genai.LLMPipeline(self.model_path, target_device, MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL")
             else:
                 if target_device == "GPU":
+                    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} sulla {model_device_name_GPU[0]} da {self.model_path}")
                     self.pipe = ov_genai.VLMPipeline(self.model_path, target_device)
                 else:
                     print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in vlm multi gpu")
+                    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} su entrambe le  {model_device_name_GPU[0]} da {self.model_path}")
                     self.pipe = ov_genai.VLMPipeline(self.model_path, target_device, MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL")
 
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -232,7 +236,7 @@ class JarvisServerIDE:
 
                     if token is None :
                         response_time = time.time() - ttft
-                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {time.time() - ttft:.2f} secondi. Rate: {token_count_risposta / response_time:.2f} token/s. Token generati: {token_count_risposta}\n")
+                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {response_time:.2f} secondi. Rate: {token_count_risposta / response_time:.2f} token/s. Token generati: {token_count_risposta}\n")
                         break
 
                     if not is_chat :
@@ -269,7 +273,7 @@ class JarvisServerIDE:
                         else:
                             continue
 
-                    token_count_risposta += len(self.tokenizer.encode(token))
+                    token_count_risposta += len(self.tokenizer.encode(token, add_special_tokens=False))
 
                     if is_chat :
                         chunk = {
