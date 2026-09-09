@@ -204,7 +204,6 @@ class JarvisServerIDE:
                         config.min_p=0.0
                         config.presence_penalty=1.5
                         config.repetition_penalty=1.0
-                        #config.apply_chat_template = False
 
                     self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
 
@@ -221,22 +220,44 @@ class JarvisServerIDE:
                 found_and_think = False
                 token_count_think = 0
                 token_count_risposta = 0
+                char_count_risposta = 0
                 think_buffer = ""
                 start_time = time.time()
                 ttft = start_time
                 print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione in corso...")
 
+                BATCH_SIZE = 4
+                batch_buffer = ""
+
                 while True :
                     try :
-                        token = token_queue.get(timeout=5.0)
+                        token = token_queue.get(timeout=2.0)
                     except Empty:
                         if stop_event.is_set() :
                             break
                         continue
 
                     if token is None :
+                        if batch_buffer:
+                            chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "content": batch_buffer
+                                    },
+                                    "index": 0
+                                }] if is_chat else {
+                                    "text": batch_buffer,
+                                    "index": 0
+                                }
+                            }
+
+                            yield f"data: {json.dumps(chunk)}\n\n"
+                            batch_buffer = ""
+
+
                         response_time = time.time() - ttft
-                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {response_time:.2f} secondi. Rate: {token_count_risposta / response_time:.2f} token/s. Token generati: {token_count_risposta}\n")
+                        rate = char_count_risposta / response_time if response_time > 0 else 0
+                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {response_time:.2f} secondi. Rate: {rate:.2f} token/s. Token generati: {char_count_risposta}\n")
                         break
 
                     if not is_chat :
@@ -255,11 +276,11 @@ class JarvisServerIDE:
                             found_and_think = True
                             after_think = think_buffer.split("</think>", 1)[-1]
 
-                            token_count_think += len(self.tokenizer.encode(think_buffer.split("</think>", 1)[0]))
+                            token_count_think += len((think_buffer.split("</think>", 1)[0])) // 4
 
                             ttlt_think = time.time() - start_time            
 
-                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero completato in {ttlt_think:.2f} secondi. Token generati: {token_count_think}. Rate: {token_count_think / ttlt_think:.2f} token/s.")
+                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero completato in {ttlt_think:.2f} secondi. Token stimati: {token_count_think}. Rate: {token_count_think / max(ttlt_think, 0.001):.1f} token/s.")
                             print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token di chiusura: {repr(token)} was_thinking: {found_and_think} think_buffer: {repr(think_buffer)}")
                             
                             think_buffer = ""
@@ -273,19 +294,26 @@ class JarvisServerIDE:
                         else:
                             continue
 
-                    token_count_risposta += len(self.tokenizer.encode(token, add_special_tokens=False))
+                    char_count_risposta += len(token)
+                    token_count_risposta += len(token) // 4
 
-                    if is_chat :
+                    batch_buffer += token
+
+                    if len(batch_buffer) >= BATCH_SIZE:
                         chunk = {
-                            "choices": [{"delta": {"content": token}, "index": 0}] 
-                        }
-                    else :
-                        print(f"Inviando token: {token}")
-                        chunk = {
-                            "choices": [{"text": token, "index": 0}] 
+                            "choices": [{
+                                "delta": {
+                                    "content": batch_buffer
+                                },
+                                "index": 0
+                            }] if is_chat else {
+                                "text": batch_buffer,
+                                "index": 0
+                            }
                         }
 
-                    yield f"data: {json.dumps(chunk)}\n\n"                 
+                        yield f"data: {json.dumps(chunk)}\n\n"
+                        batch_buffer = ""                
 
             except GeneratorExit:
                 stop_event.set()
