@@ -25,6 +25,9 @@ class JarvisServerIDE:
         self.pipe = None
         self.tokenizer = None
 
+        self.kv_cache_quantization = "f16"
+        self.cache_eviction_enabled = True
+
         self._setup_routes()
 
     # Carica il modello sul dispositivo hardware disponibile (priorità GPU)
@@ -55,22 +58,62 @@ class JarvisServerIDE:
             print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {target_device}")
             print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {self.model_type}")
 
+            pipelin_kwargs = {}
+            pipelin_kwargs["KV_CACHE_PRECISION"] = self.kv_cache_quantization
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} KV_CACHE_PRECISION: {self.kv_cache_quantization}")
+
+            if self.cache_eviction_enabled:
+                eviction_config = ov_genai.EvictionConfig(
+                    start_size=256,
+                    recent_size=512,
+                    max_cache_size=4096,
+                    aggregation_model=ov_genai.Aggregation.RECENCY,
+                    apply_rotation=True,
+                    snapkv_window_size=8   
+                )
+                pipelin_kwargs["EVICTION_CONFIG"] = eviction_config
+                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} EVICTION: {self.cache_eviction_enabled}"
+                      f" - start_size: {eviction_config.start_size}"
+                      f" - recent_size: {eviction_config.recent_size}"
+                      f" - max_cache_size: {eviction_config.max_cache_size}"
+                      f" - aggregation_model: {eviction_config.aggregation_model}"
+                      f" - apply_rotation: {eviction_config.apply_rotation}"
+                      f" - snapkv_window_size: {eviction_config.snapkv_window_size}")
+
             if self.model_type == "llm":
                 if target_device == "GPU":
                     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} sulla {model_device_name_GPU[0]} da {self.model_path}")
-                    self.pipe = ov_genai.LLMPipeline(self.model_path, target_device)
+                    self.pipe = ov_genai.LLMPipeline(
+                        self.model_path, 
+                        target_device,
+                        **pipelin_kwargs
+                        )
                 else:
                     print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in llm multi gpu")
                     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} su entrambe le {model_device_name_GPU[0]} da {self.model_path}")
-                    self.pipe = ov_genai.LLMPipeline(self.model_path, target_device, MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL")
+                    self.pipe = ov_genai.LLMPipeline(
+                        self.model_path, 
+                        target_device, 
+                        MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL",
+                        **pipelin_kwargs
+                        )
             else:
                 if target_device == "GPU":
                     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} sulla {model_device_name_GPU[0]} da {self.model_path}")
-                    self.pipe = ov_genai.VLMPipeline(self.model_path, target_device)
+                    self.pipe = ov_genai.VLMPipeline(
+                        self.model_path, 
+                        target_device,
+                        **pipelin_kwargs
+                        )
                 else:
                     print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in vlm multi gpu")
                     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} su entrambe le  {model_device_name_GPU[0]} da {self.model_path}")
-                    self.pipe = ov_genai.VLMPipeline(self.model_path, target_device, MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL")
+                    self.pipe = ov_genai.VLMPipeline(
+                        self.model_path, 
+                        target_device, 
+                        MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL",
+                        **pipelin_kwargs
+                        )
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                     self.model_path,
@@ -84,7 +127,27 @@ class JarvisServerIDE:
         except Exception as e :
             print(f"\n{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore caricamento su {model_device_name_GPU} : {e}")
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} su {model_device_name_CPU}...")
-            self.pipe = ov_genai.LLMPipeline(self.model_path, "CPU")
+
+            cpu_kwargs = {
+                "KV_CACHE_PRECISION": self.kv_cache_quantization,
+                "DYNAMMIC_QUANTIZATION_GROUP_SIZE": "32",
+            }
+
+            if self.cache_eviction_enabled:
+                cpu_kwargs["EVICTION_CONFIG"] = ov_genai.CacheEvictionConfig(
+                    start_size=256,
+                    recent_size=512,
+                    max_cache_size=4096,
+                    aggregation_model=ov_genai.Aggregation.RECENCY,
+                    apply_rotation=True,
+                    snapkv_window_size=8   
+                )
+
+            self.pipe = ov_genai.LLMPipeline(
+                self.model_path, 
+                "CPU",
+                **cpu_kwargs
+                )
             self.tokenizer = AutoTokenizer.from_pretrained(
                                 self.model_path,
                                 trust_remote_code=True
