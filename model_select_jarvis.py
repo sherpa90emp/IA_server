@@ -6,6 +6,7 @@ from huggingface_hub import snapshot_download
 from optimum.intel.openvino import OVModelForCausalLM, OVModelForVisualCausalLM
 from optimum.exporters.openvino.convert import export_tokenizer
 from transformers import AutoTokenizer, AutoConfig
+from utilities.general_func import recupero_dimensione_modello_dal_nome
 
 # Ottiene l'elenco dei modelli locali disponibili nella directory
 def get_local_models():
@@ -42,7 +43,7 @@ def messaggio_iniziale(local_models):
             print(f"{i} - {model}")
 
     print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Inserisci il numero o il nome del modello che desideri usare: ")
-    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premendo INVIO verrà usato il modello predefinito. (Qwen3-14B-int4-ov)")
+    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premendo INVIO verrà usato il modello predefinito.")
     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scrivi EXIT per uscire.\n")
 
 # Funzione per stampare un messaggio di avviso in caso di errore
@@ -325,3 +326,67 @@ def richiesta_valori(valori_ammessi, valore_default, tipo_conversione):
                     print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Valore non valido. Inserire un valore valido.\n")
         except ValueError as e:
             print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Input non valido. Inserire un valore valido.\n Error: {e}\n")
+
+def load_draft_model():
+
+    model_disponibili = get_local_models()
+    candidati = []
+    max_draft_params = 3
+
+    for model in model_disponibili:
+        model_path = f"/home/andrea/models/{model}"
+
+        if not os.path.exists(model_path):
+            continue
+
+        params = recupero_dimensione_modello_dal_nome(model)
+
+        if params is None:
+            print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Parametri non trovati per il modello {model}\n")
+            continue
+
+        if params <= max_draft_params:
+            candidati.append((model, model_path, params))
+
+    if not candidati:
+        print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Nessun modello con parametri inferiore o uguale a {max_draft_params}B trovato.\n")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding non disponibile.\n")
+        return None
+
+    if len(candidati) == 1:
+        name, path, params_draft = candidati[0]
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello draft selezionato: {name} con {params_draft}B di parametri\n")
+        confirm = input(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Usare questo modello? (s/n): \n")
+
+        if confirm.lower() == 's':
+            return name, path
+        else:
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding disattivato.\n")
+            return None, None
+    else:
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Seleziona il modello draft da usare:\n")
+
+        for i, (name, path, params_draft) in enumerate(candidati):
+            print(f"{i+1} - {name} con {params_draft}B di parametri")
+
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premere INVIO per disattivare speculative decoding.")
+
+        while True:
+            user_input = input()
+
+            if not user_input:
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Nessun modello selezionato.\n")
+                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding disattivato.\n")
+                return None, None
+
+            if user_input.isdigit():
+                idx = int(user_input) - 1
+
+                if 0 <= idx < len(candidati):
+                    name, path, params_draft = candidati[idx]
+                    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello draft selezionato: {name} con {params_draft}B di parametri\n")
+                    return name, path
+                else:
+                    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido.\n")
+            else:
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Input non valido. Inserire un numero valido.\n")            

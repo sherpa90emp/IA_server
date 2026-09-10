@@ -15,7 +15,7 @@ from tools import TOOL_REGISTRY, execute_tool, get_schemas
 
 class JarvisServerIDE:
     # Inizializza il server con modello e configurazioni base
-    def __init__(self, model_name, model_path, model_type):
+    def __init__(self, model_name, model_path, model_type, model_draft, model_draft_path):
         self.model_name = model_name
         self.model_path = model_path
         self.model_type = model_type
@@ -24,9 +24,16 @@ class JarvisServerIDE:
         self.model_lock = threading.Lock()
         self.pipe = None
         self.tokenizer = None
+        self.draft_pipe = None
 
+        # --- KV-Cache configurazione ---
         self.kv_cache_quantization = "f16"
         self.cache_eviction_enabled = True
+
+        # --- Speculative Decoding ---
+        self.model_draft_name = model_draft
+        self.model_draft_path = model_draft_path
+        self.num_assistant_tokens = 5
 
         self._setup_routes()
 
@@ -53,32 +60,55 @@ class JarvisServerIDE:
             elif user_input_caricamento_gpu.lower() == "n":
                 target_device = "GPU"
             else:
-                print(f"")    
+                print(f"")
 
-            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {target_device}")
-            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} {self.model_type}")
+            pipeline_kwargs = {}
+            pipeline_kwargs["KV_CACHE_PRECISION"] = self.kv_cache_quantization
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} KV_CACHE_PRECISION: {self.kv_cache_quantization}")
 
-            pipelin_kwargs = {}
-            pipelin_kwargs["KV_CACHE_PRECISION"] = self.kv_cache_quantization
-            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} KV_CACHE_PRECISION: {self.kv_cache_quantization}")
+            scheduler_config = None
 
             if self.cache_eviction_enabled:
-                eviction_config = ov_genai.EvictionConfig(
-                    start_size=256,
-                    recent_size=512,
-                    max_cache_size=4096,
-                    aggregation_model=ov_genai.Aggregation.RECENCY,
+                scheduler_config = scheduler_config or ov_genai.SchedulerConfig()
+                scheduler_config.use_cache_eviction = True
+                scheduler_config.cache_eviction_config = ov_genai.CacheEvictionConfig(
+                    256,                                                                    # start_size
+                    512,                                                                    # recent_size
+                    4096,                                                                   # max_cache_size
+                    aggregation_mode=ov_genai.AggregationMode.NORM_SUM,
                     apply_rotation=True,
-                    snapkv_window_size=8   
+                    snapkv_window_size=8,
                 )
-                pipelin_kwargs["EVICTION_CONFIG"] = eviction_config
-                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} EVICTION: {self.cache_eviction_enabled}"
-                      f" - start_size: {eviction_config.start_size}"
-                      f" - recent_size: {eviction_config.recent_size}"
-                      f" - max_cache_size: {eviction_config.max_cache_size}"
-                      f" - aggregation_model: {eviction_config.aggregation_model}"
-                      f" - apply_rotation: {eviction_config.apply_rotation}"
-                      f" - snapkv_window_size: {eviction_config.snapkv_window_size}")
+                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} EVICTION: {self.cache_eviction_enabled}")
+
+            draft_model = None
+
+            if self.model_draft_path and target_device.startswith("HETERO"):
+                draft_device = gpu_device_id[0]
+                draft_model = ov_genai.draft_model(self.model_draft_path, draft_device)
+                scheduler_config = scheduler_config or ov_genai.SchedulerConfig()
+                scheduler_config.cache_size=4
+                scheduler_config.max_num_seqs=4
+                scheduler_config.dynamic_split_fuse=True
+                scheduler_config.enable_prefix_caching=True
+
+                pipeline_kwargs["DRAFT_MODEL"] = draft_model
+                
+                self.draft_pipe = draft_model
+
+                print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding abilitato: modello {self.model_draft_name} sulla {draft_device} da {self.model_draft_path}\n")
+                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Configurazione speculative decoding: {scheduler_config.to_string()}\n")
+
+            if scheduler_config is not None:
+                pipeline_kwargs["SCHEDULER_CONFIG"] = scheduler_config
+
+            elif self.model_draft_path and target_device == "GPU":
+                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding non abilitato.\n")
+                self.draft_pipe = None
+
+            else:
+                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding non attivo.\n")
+                self.draft_pipe = None
 
             if self.model_type == "llm":
                 if target_device == "GPU":
@@ -86,16 +116,15 @@ class JarvisServerIDE:
                     self.pipe = ov_genai.LLMPipeline(
                         self.model_path, 
                         target_device,
-                        **pipelin_kwargs
+                        **pipeline_kwargs
                         )
                 else:
-                    print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in llm multi gpu")
                     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} su entrambe le {model_device_name_GPU[0]} da {self.model_path}")
                     self.pipe = ov_genai.LLMPipeline(
                         self.model_path, 
                         target_device, 
                         MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL",
-                        **pipelin_kwargs
+                        **pipeline_kwargs
                         )
             else:
                 if target_device == "GPU":
@@ -103,16 +132,15 @@ class JarvisServerIDE:
                     self.pipe = ov_genai.VLMPipeline(
                         self.model_path, 
                         target_device,
-                        **pipelin_kwargs
+                        **pipeline_kwargs
                         )
                 else:
-                    print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} sono in vlm multi gpu")
                     print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Provo a caricare il modello {self.model_name} di tipo {self.model_type} su entrambe le  {model_device_name_GPU[0]} da {self.model_path}")
                     self.pipe = ov_genai.VLMPipeline(
                         self.model_path, 
                         target_device, 
                         MODEL_DISTRIBUTION_POLICY="PIPELINE_PARALLEL",
-                        **pipelin_kwargs
+                        **pipeline_kwargs
                         )
 
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -130,17 +158,15 @@ class JarvisServerIDE:
 
             cpu_kwargs = {
                 "KV_CACHE_PRECISION": self.kv_cache_quantization,
-                "DYNAMMIC_QUANTIZATION_GROUP_SIZE": "32",
+                "DYNAMIC_QUANTIZATION_GROUP_SIZE": 32,
             }
 
             if self.cache_eviction_enabled:
                 cpu_kwargs["EVICTION_CONFIG"] = ov_genai.CacheEvictionConfig(
-                    start_size=256,
-                    recent_size=512,
-                    max_cache_size=4096,
-                    aggregation_model=ov_genai.Aggregation.RECENCY,
-                    apply_rotation=True,
-                    snapkv_window_size=8   
+                    256,
+                    512,
+                    4096,
+                    aggregation_mode=ov_genai.AggregationMode.NORM_SUM,
                 )
 
             self.pipe = ov_genai.LLMPipeline(
@@ -283,8 +309,8 @@ class JarvisServerIDE:
                 found_and_think = False
                 token_count_think = 0
                 token_count_risposta = 0
-                char_count_risposta = 0
                 think_buffer = ""
+                full_response_text = ""
                 start_time = time.time()
                 ttft = start_time
                 print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione in corso...")
@@ -319,8 +345,9 @@ class JarvisServerIDE:
 
 
                         response_time = time.time() - ttft
-                        rate = char_count_risposta / response_time if response_time > 0 else 0
-                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {response_time:.2f} secondi. Rate: {rate:.2f} token/s. Token generati: {char_count_risposta}\n")
+                        token_count_risposta = len(self.tokenizer.encode(full_response_text))
+                        rate = token_count_risposta / response_time if response_time > 0 else 0
+                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {response_time:.2f} secondi. Rate: {rate:.2f} token/s. Token generati: {token_count_risposta}\n")
                         break
 
                     if not is_chat :
@@ -339,11 +366,12 @@ class JarvisServerIDE:
                             found_and_think = True
                             after_think = think_buffer.split("</think>", 1)[-1]
 
-                            token_count_think += len((think_buffer.split("</think>", 1)[0])) // 4
+                            think_text = think_buffer.split("</think>", 1)[0]
+                            token_count_think = len(self.tokenizer.encode(think_text))
 
                             ttlt_think = time.time() - start_time            
 
-                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero completato in {ttlt_think:.2f} secondi. Token stimati: {token_count_think}. Rate: {token_count_think / max(ttlt_think, 0.001):.1f} token/s.")
+                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero completato in {ttlt_think:.2f} secondi. Token: {token_count_think}. Rate: {token_count_think / max(ttlt_think, 0.001):.1f} token/s.")
                             print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token di chiusura: {repr(token)} was_thinking: {found_and_think} think_buffer: {repr(think_buffer)}")
                             
                             think_buffer = ""
@@ -357,8 +385,7 @@ class JarvisServerIDE:
                         else:
                             continue
 
-                    char_count_risposta += len(token)
-                    token_count_risposta += len(token) // 4
+                    full_response_text += token
 
                     batch_buffer += token
 
@@ -414,7 +441,7 @@ class JarvisServerIDE:
         try:
             current_message = list(message)
             current_prompt = prompt
-            MAX_TOOL_CALLS = 3
+            MAX_TOOL_CALLS = 6
 
             for attempt in range (MAX_TOOL_CALLS + 1):
                 print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS + 1} — generazione in corso...")

@@ -1,4 +1,4 @@
-from model_select_jarvis import get_model_selection
+from model_select_jarvis import get_model_selection, load_draft_model
 from model_select_embedding import conferma_uso_emb, load_model_emb
 from server_jarvis_IDE import JarvisServerIDE
 from utilities.color_logger import ColoreLog
@@ -51,7 +51,8 @@ def avvio_jarvis():
                 """
 
                 model_name, model_path, model_type = get_model_selection()
-                jarvis = JarvisServerIDE(model_name, model_path, model_type)
+                model_draft, model_draft_path = load_draft_model()
+                jarvis = JarvisServerIDE(model_name, model_path, model_type, model_draft, model_draft_path)
                 jarvis.run_server_IDE()
 
             elif user_input == "2":
