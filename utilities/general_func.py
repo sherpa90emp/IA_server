@@ -49,8 +49,12 @@ def check_folder(generic_dir) -> bool:
             return True
     return False
 
-def recupero_dimensione_modello(model_path):
-    return "Da finire"
+def recupero_dimensione_modello_dal_nome(model_name):
+    match = re.search(r"(\d+\.?\d*)\s*B", model_name, re.IGNORECASE)
+    if match:
+        return float(match.group(1))
+    else:
+        None
 
 def debug_context_quantization(model_path):
 
@@ -60,6 +64,3 @@ def debug_context_quantization(model_path):
     for device in devices :
         if "GPU" in device :
             print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Device: {device} -> [DEFAULT] KV_CACHE_PRECISION: {core.get_property(device, 'KV_CACHE_PRECISION')} - [DEFAULT] DYNAMIC_QUANTIZATION_GROUP_SIZE: {core.get_property(device, 'DYNAMIC_QUANTIZATION_GROUP_SIZE')}")
-
-
-    
