@@ -92,7 +92,7 @@ class JarvisServerIDE:
                 scheduler_config.dynamic_split_fuse=True
                 scheduler_config.enable_prefix_caching=True
 
-                pipeline_kwargs["DRAFT_MODEL"] = draft_model
+                pipeline_kwargs["draft_model"] = draft_model
                 
                 self.draft_pipe = draft_model
 
