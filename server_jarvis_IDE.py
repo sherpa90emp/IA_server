@@ -30,10 +30,12 @@ class JarvisServerIDE:
         self.kv_cache_quantization = "f16"
         self.cache_eviction_enabled = True
 
-        # --- Speculative Decoding ---
+        # --- Speculative Decoding / Tree Search ---
         self.model_draft_name = model_draft
         self.model_draft_path = model_draft_path
-        self.num_assistant_tokens = 5
+        self.num_assistant_tokens = 5       # token candidati totali inviati al target model
+        self.branching_factor = 2           # candidati per nodo dell'albero di ricerca
+        self.tree_depth = 2                 # profondità lookahead del draft model
 
         self._setup_routes()
 
@@ -92,7 +94,7 @@ class JarvisServerIDE:
                 scheduler_config.dynamic_split_fuse=True
                 scheduler_config.enable_prefix_caching=True
 
-                pipeline_kwargs["draft_model"] = draft_model
+                pipeline_kwargs["DRAFT_MODEL"] = draft_model
                 
                 self.draft_pipe = draft_model
 
@@ -180,6 +182,51 @@ class JarvisServerIDE:
                                 ) 
             print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_CPU}")     
 
+    # Costruisce una GenerationConfig OpenVINO in base al tipo di richiesta
+    def _build_generation_config(self, max_new_tokens: int, is_chat: bool) -> "ov_genai.GenerationConfig":
+        """
+        Crea e configura un oggetto GenerationConfig riutilizzabile.
+        Centralizza i parametri di decoding per evitare duplicazioni tra
+        _collect_generation e stream_generator.
+
+        Se il draft model è attivo (self.draft_pipe non None), inserisce anche
+        i parametri di tree search per lo speculative decoding.
+
+        Args:
+            max_new_tokens: Limite massimo di token da generare.
+            is_chat:        True per chat (sampling), False per completions (greedy).
+
+        Returns:
+            Oggetto ov_genai.GenerationConfig pronto per pipe.generate().
+        """
+        config = ov_genai.GenerationConfig()
+        config.max_new_tokens = max_new_tokens
+
+        if not is_chat:
+            # Completamento: decoding deterministico (greedy)
+            config.do_sample = False
+            config.temperature = 0.0
+            config.presence_penalty = 1.5
+        else:
+            # Chat: sampling con penalità anti-ripetizione
+            config.do_sample = True
+            config.temperature = 1.0
+            config.top_p = 0.95
+            config.top_k = 20
+            config.min_p = 0.0
+            config.presence_penalty = 1.5
+            config.repetition_penalty = 1.0
+
+        # Speculative decoding / Tree Search: abilitato solo se il draft model è caricato
+        if self.draft_pipe is not None:
+            config.num_assistant_tokens = self.num_assistant_tokens
+            config.branching_factor = self.branching_factor
+            config.tree_depth = self.tree_depth
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Tree search: assistant_tokens={self.num_assistant_tokens}, "
+                  f"branching_factor={self.branching_factor}, tree_depth={self.tree_depth}")
+
+        return config
+
     # Esegue generazione non-streaming del modello
     def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool) -> str:
         """
@@ -207,17 +254,7 @@ class JarvisServerIDE:
         
         def run_generation():
             try:
-                config = ov_genai.GenerationConfig()
-                config.max_new_tokens = max_new_tokens
-
-                if not is_chat:
-                    config.do_sample = False
-                    config.temperature = 0.0
-                    config.presence_penalty = 1.5
-                else:
-                    config.do_sample = True
-                    config.temperature = 0.6
-
+                config = self._build_generation_config(max_new_tokens, is_chat)
                 self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
             except Exception as e:
                 print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore generazione: {e}")
@@ -279,25 +316,11 @@ class JarvisServerIDE:
         
             def run_generation() :
                 try :
-                    config = ov_genai.GenerationConfig()
-                    config.max_new_tokens = max_new_tokens
-
-                    if not is_chat :
-                        config.do_sample = False
-                        config.temperature = 0.0
-                        config.presence_penalty = 1.5
-                    else :
-                        config.temperature = 1.0
-                        config.top_p=0.95
-                        config.top_k=20
-                        config.min_p=0.0
-                        config.presence_penalty=1.5
-                        config.repetition_penalty=1.0
-
+                    config = self._build_generation_config(max_new_tokens, is_chat)
                     self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
 
                 except Exception as e :
-                    print(f"Errore generazione: {e}")
+                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore generazione: {e}")
 
                 finally : 
                     token_queue.put(None)
