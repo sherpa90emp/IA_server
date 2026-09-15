@@ -219,6 +219,7 @@ class JarvisServerIDE:
 
         # Speculative decoding / Tree Search: abilitato solo se il draft model è caricato
         if self.draft_pipe is not None:
+            config.do_sample = False
             config.num_assistant_tokens = self.num_assistant_tokens
             config.branching_factor = self.branching_factor
             config.tree_depth = self.tree_depth
