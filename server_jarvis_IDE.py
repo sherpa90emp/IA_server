@@ -217,14 +217,16 @@ class JarvisServerIDE:
             config.presence_penalty = 1.5
             config.repetition_penalty = 1.0
 
+        #Non funzionante con OpenVino al momento
+        
         # Speculative decoding / Tree Search: abilitato solo se il draft model è caricato
-        if self.draft_pipe is not None:
-            config.do_sample = False
-            config.num_assistant_tokens = self.num_assistant_tokens
-            config.branching_factor = self.branching_factor
-            config.tree_depth = self.tree_depth
-            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Tree search: assistant_tokens={self.num_assistant_tokens}, "
-                  f"branching_factor={self.branching_factor}, tree_depth={self.tree_depth}")
+        #if self.draft_pipe is not None:
+            #config.do_sample = False
+            #config.num_assistant_tokens = self.num_assistant_tokens
+            #config.branching_factor = self.branching_factor
+            #config.tree_depth = self.tree_depth
+            #print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Tree search: assistant_tokens={self.num_assistant_tokens}, "
+                  #f"branching_factor={self.branching_factor}, tree_depth={self.tree_depth}")
 
         return config
 
@@ -385,6 +387,8 @@ class JarvisServerIDE:
 
                     if not found_and_think:
                         think_buffer += token
+                        _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+                        print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
                         
                         if "</think>" in think_buffer:
                             found_and_think = True
@@ -533,6 +537,9 @@ class JarvisServerIDE:
         async def chat(request: Request):
             data = await request.json()
             messages = data.get("messages", [])
+
+            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} keys ricevute dal client: {list(data.keys())}")
+            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
             
             client_wants_tools = data.get("tools") or data.get("tool_choice")
             schemas = get_schemas() if client_wants_tools else None
