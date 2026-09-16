@@ -369,7 +369,7 @@ def load_draft_model():
         for i, (name, path, params_draft) in enumerate(candidati):
             print(f"{i+1} - {name} con {params_draft}B di parametri")
 
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premere INVIO per disattivare speculative decoding.")
+        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premere INVIO per disattivare speculative decoding.")
 
         while True:
             user_input = input()
