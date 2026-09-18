@@ -6,7 +6,7 @@ FILE_DIR = "/home/andrea/"
 
 def get_all_files(subdir=None):
     """
-    Recupera l'elenco di tutti i file presenti nella directory principale o in una sottodirectory specifica.
+    Recupera l'elenco di tutti i file o cartelle presenti nella directory principale o in una sottodirectory specifica.
 
     Args:
         subdir (str, optional): Nome della sottodirectory da cui recuperare i file. Defaults to None.

@@ -1,5 +1,5 @@
 from tools.meteo import get_meteo, formatta_meteo
-from tools.lettura_file import search_file, read_file, mod_file
+from tools.lettura_file import search_file, read_file, mod_file, get_all_files
 from utilities.color_logger import ColoreLog
 
 # Registry centrale: nome_tool → { func, schema }
@@ -150,6 +150,27 @@ register_tool(
                     },
                 },
                 "required": ["file_path", "content"]
+            }
+        }
+    }
+)
+
+register_tool(
+    name="get_all_files",
+    func=get_all_files,
+    schema={
+        "type": "function",
+        "function": {
+            "name": "get_all_files",
+            "description": "Recupera una lista di file o cartelle all'interno di una dir specifica (default: /home/andrea)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "subdir": {
+                        "type": "string",
+                        "description": "Nome della subdir, può essere None (defoult: /home/andrea)"
+                    },
+                }
             }
         }
     }
