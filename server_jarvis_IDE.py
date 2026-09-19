@@ -9,6 +9,7 @@ import openvino_genai as ov_genai
 import openvino as ov
 from transformers import AutoTokenizer
 import uvicorn
+import uuid
 from utilities.color_logger import ColoreLog
 from utilities.general_func import rileva_device
 from tools import TOOL_REGISTRY, execute_tool, get_schemas
@@ -446,7 +447,7 @@ class JarvisServerIDE:
             yield "data: [DONE]\n\n"
 
     # Gestisce il ciclo di chiamate tool e streaming finale
-    def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int):
+    def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int, use_client_tool: bool):
         """
         Gestisce il ciclo completo di tool calling:
         1. Genera l'output completo (senza streaming).
@@ -490,6 +491,39 @@ class JarvisServerIDE:
                         name = tool_data.get("name")
                         arguments = tool_data.get("arguments", {})
 
+                        if use_client_tool:
+                            call_id = f"call_{uuid.uuid4().hex[:24]}"
+                            print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {name} ({arguments})")
+
+                            tool_call_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_calls": [{
+                                            "index": 0,
+                                            "id": call_id,
+                                            "type": "function",
+                                            "function": {
+                                                "name": name,
+                                                "arguments": json.dumps(arguments)
+                                            }
+                                        }]
+                                    },
+                                    "index": 0,
+                                    "finish_reason": None
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_call_chunk)}\n\n"
+
+                            finish_chunk = {
+                                "choices": [{
+                                    "delta": {},
+                                    "index": 0,
+                                    "finish_reason": "tool_calls"
+                                }]
+                            }
+                            yield f"data: {json.dumps(finish_chunk)}\n\n"
+                            return
+
                         print(f"{ColoreLog.INFO}[TOOL]{ColoreLog.RESET} Chiamata {name} ({arguments})")
                         result = execute_tool(name, arguments)
                         print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET} Risultato: {result[:120]}")
@@ -514,9 +548,17 @@ class JarvisServerIDE:
                 print(f"{ColoreLog.SUCCESS}[TOOL_STREAM]{ColoreLog.RESET} Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
 
                 CHUNK_SIZE = 20
-                for i in range(0, len(final_text), CHUNK_SIZE):
-                    chunk_text = final_text[i:i + CHUNK_SIZE]
-                    chunk = {"choices": [{"delta": {"content": chunk_text}, "index": 0}]}
+                text_chunks = [final_text[i:i + CHUNK_SIZE] for i in range(0, len(final_text), CHUNK_SIZE)] or [""]
+
+                for idx, chunk_text in enumerate(text_chunks):
+                    is_last = (idx == len(text_chunks) - 1)
+                    chunk = {
+                        "choices": [{
+                            "delta": {"content": chunk_text}, 
+                            "index": 0,
+                            "finish_reason": "stop" if is_last else None
+                        }]
+                    }
                     yield f"data: {json.dumps(chunk)}\n\n"
                 break
 
@@ -537,16 +579,22 @@ class JarvisServerIDE:
         async def chat(request: Request):
             data = await request.json()
             messages = data.get("messages", [])
+            client_tools = data.get("tools")
+            use_client_tool = False
 
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} keys ricevute dal client: {list(data.keys())}")
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
+            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} messages: {messages}")
             
-            client_wants_tools = data.get("tools") or data.get("tool_choice")
-            schemas = get_schemas() if client_wants_tools else None
+            if client_tools:
+                schemas = client_tools
+                use_client_tool = True
+            else:
+                schemas = get_schemas()
 
             prompt = self.tokenizer.apply_chat_template(
                 messages,
-                tools=schemas if schemas else None,
+                tools=schemas,
                 tokenize=False,
                 add_generation_prompt=True,
                 reasoning_effort="medium"
@@ -557,7 +605,8 @@ class JarvisServerIDE:
                     self.tool_stream_generator(
                         messages,
                         prompt,
-                        max_new_tokens=4096
+                        max_new_tokens=4096,
+                        use_client_tool=use_client_tool
                     ),
                     media_type="text/event-stream"
                 )
