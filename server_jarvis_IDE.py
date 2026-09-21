@@ -473,27 +473,33 @@ class JarvisServerIDE:
             MAX_TOOL_CALLS = 6
 
             for attempt in range (MAX_TOOL_CALLS + 1):
-                print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS + 1} — generazione in corso...")
+                print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS + 1} — Generazione in corso...")
                 raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
-                print(f"{ColoreLog.DEBUG}[TOOL_STREAM]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
+                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
 
                 clean_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
-                print(f"{ColoreLog.DEBUG}[TOOL_STREAM]{ColoreLog.RESET} Clean output dopo rimozione <think>: {repr(clean_output[:200])}")
+                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Clean output dopo rimozione <think>: {repr(clean_output[:200])}")
 
                 tool_match = re.search(r"<tool_call>(.*?)</tool_call>", clean_output, flags=re.DOTALL)
-
+                
                 if tool_match and attempt < MAX_TOOL_CALLS:
-                    tool_json_str = tool_match.group(1).strip()
-                    print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tool call rilevata: {repr(tool_json_str[:200])}")
+                    tool_match_str = tool_match.group(1).strip()
+                    print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tool call rilevata: {repr(tool_match_str[:200])}")
 
                     try:
-                        tool_data = json.loads(tool_json_str)
-                        name = tool_data.get("name")
-                        arguments = tool_data.get("arguments", {})
+                        func_match = re.search(r"<function=([^>]+)", tool_match_str)
+                        func_name = func_match.group(1) if func_match else None
+
+                        param_pattern = re.compile(r"<parameter=([^>]+)>\n(.*?)\n</parameter>", re.DOTALL)
+                        arguments = {}
+                        for match in param_pattern.finditer(tool_match_str):
+                            param_name = match.group(1).strip()
+                            param_value = match.group(2).strip()
+                            arguments[param_name] = param_value
 
                         if use_client_tool:
                             call_id = f"call_{uuid.uuid4().hex[:24]}"
-                            print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {name} ({arguments})")
+                            print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {func_name} ({arguments})")
 
                             tool_call_chunk = {
                                 "choices": [{
@@ -503,7 +509,7 @@ class JarvisServerIDE:
                                             "id": call_id,
                                             "type": "function",
                                             "function": {
-                                                "name": name,
+                                                "name": func_name,
                                                 "arguments": json.dumps(arguments)
                                             }
                                         }]
@@ -524,12 +530,12 @@ class JarvisServerIDE:
                             yield f"data: {json.dumps(finish_chunk)}\n\n"
                             return
 
-                        print(f"{ColoreLog.INFO}[TOOL]{ColoreLog.RESET} Chiamata {name} ({arguments})")
-                        result = execute_tool(name, arguments)
+                        print(f"{ColoreLog.INFO}[TOOL]{ColoreLog.RESET} Chiamata {func_name} ({arguments})")
+                        result = execute_tool(func_name, arguments)
                         print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET} Risultato: {result[:120]}")
 
                         current_message.append({"role": "assistant", "content": raw_output})
-                        current_message.append({"role": "tool", "content": result, "name": name})
+                        current_message.append({"role": "tool", "content": result, "name": func_name})
 
                         current_prompt = self.tokenizer.apply_chat_template(
                             current_message,
@@ -545,7 +551,7 @@ class JarvisServerIDE:
                 final_text = re.sub(r"<tool_call>.*?</tool_call>", "", final_text, flags=re.DOTALL).strip()
                 final_text = re.sub(r"<tool_response>.*?</tool_response>", "", final_text, flags=re.DOTALL).strip()
 
-                print(f"{ColoreLog.SUCCESS}[TOOL_STREAM]{ColoreLog.RESET} Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
+                print(f"{ColoreLog.SUCCESS}[DEBUG]{ColoreLog.RESET} Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
 
                 CHUNK_SIZE = 20
                 text_chunks = [final_text[i:i + CHUNK_SIZE] for i in range(0, len(final_text), CHUNK_SIZE)] or [""]
@@ -579,6 +585,17 @@ class JarvisServerIDE:
         async def chat(request: Request):
             data = await request.json()
             messages = data.get("messages", [])
+            for msg in messages:
+                if msg.get("role") == "assistant" and msg.get("tool_calls"):
+                    for tc in msg.get("tool_calls"):
+                        func = tc.get("function", {})
+                        args = func.get("arguments")
+                        if isinstance(args, str):
+                            try:
+                                func["arguments"] = json.loads(args)
+                            except json.JSONDecodeError:
+                                func["arguments"] = {}
+
             client_tools = data.get("tools")
             use_client_tool = False
 
