@@ -304,7 +304,14 @@ class JarvisServerIDE:
         lock_acquired = self.model_lock.acquire(blocking=False)
 
         if not lock_acquired:
-            yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
+            error_payload = {
+                "error": {
+                    "message": "GPU busy, blocked",
+                    "type": "server_error",
+                    "code": "gpu_busy"
+                }
+            }
+            yield f"data: {json.dumps(error_payload)}\n\n"
             return
 
         try :
@@ -464,7 +471,14 @@ class JarvisServerIDE:
         lock_acquired = self.model_lock.acquire(blocking=False)
 
         if not lock_acquired:
-            yield f"data: {json.dumps({'error': 'GPU busy, blocked'})}\n\n"
+            error_payload = {
+                "error": {
+                    "message": "GPU busy, blocked",
+                    "type": "server_error",
+                    "code": "gpu_busy"
+                }
+            }
+            yield f"data: {json.dumps(error_payload)}\n\n"
             return
 
         try:
@@ -601,7 +615,7 @@ class JarvisServerIDE:
 
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} keys ricevute dal client: {list(data.keys())}")
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
-            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} messages: {messages}")
+            #print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} messages: {messages}")
             
             if client_tools:
                 schemas = client_tools
