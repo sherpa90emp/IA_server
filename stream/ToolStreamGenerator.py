@@ -230,6 +230,11 @@ class ToolStreamGenerator:
                 _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
                 print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
 
+                if "</think>" in think_buffer:
+                    found_and_think = True
+                    after_think = think_buffer.split("</think>", 1)[-1]
+                    token = after_think
+
             output += token
 
         thread.join()
