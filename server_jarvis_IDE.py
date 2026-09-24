@@ -2,14 +2,17 @@ import re
 import time
 import json
 import threading
+import asyncio
+import uvicorn
+import uuid
+
+import openvino_genai as ov_genai
+import openvino as ov
+
 from queue import Queue, Empty
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
-import openvino_genai as ov_genai
-import openvino as ov
 from transformers import AutoTokenizer
-import uvicorn
-import uuid
 from utilities.color_logger import ColoreLog
 from utilities.general_func import rileva_device
 from tools import TOOL_REGISTRY, execute_tool, get_schemas
@@ -232,7 +235,7 @@ class JarvisServerIDE:
         return config
 
     # Esegue generazione non-streaming del modello
-    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool) -> str:
+    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool, disconnect_event=None) -> str:
         """
         Esegue la generazione e restituisce l'output completo come stringa.
         Non effettua streaming verso il client.
@@ -251,7 +254,7 @@ class JarvisServerIDE:
         stop_event = threading.Event()
 
         def ov_streamer(subword: str) -> bool:
-            if stop_event.is_set() :
+            if stop_event.is_set() or (disconnect_event is not None and disconnect_event.is_set()):
                 return True
             token_queue.put(subword)
             return False
@@ -269,13 +272,23 @@ class JarvisServerIDE:
         thread.start()
 
         output = ""
+        think_buffer = ""
+        found_and_think = False
+
         while True:
             try:
                 token = token_queue.get(timeout=5.0)
             except Empty:
                 continue
+
             if token is None:
                 break
+
+            if not found_and_think:
+                think_buffer += token
+                _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+                print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
+
             output += token
 
         thread.join()
@@ -301,7 +314,7 @@ class JarvisServerIDE:
         max_new_tokens = kwargs.get("max_new_tokens", max_new_tokens)
         print(f"{ColoreLog.DEBUG}[STREAM]{ColoreLog.RESET} max_new_tokens = {max_new_tokens} | kwargs keys = {list(kwargs.keys())}")
 
-        lock_acquired = self.model_lock.acquire(blocking=False)
+        lock_acquired = self.model_lock.acquire(timeout=120)
 
         if not lock_acquired:
             error_payload = {
@@ -454,7 +467,7 @@ class JarvisServerIDE:
             yield "data: [DONE]\n\n"
 
     # Gestisce il ciclo di chiamate tool e streaming finale
-    def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int, use_client_tool: bool):
+    def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int, use_client_tool: bool, disconnect_event: None):
         """
         Gestisce il ciclo completo di tool calling:
         1. Genera l'output completo (senza streaming).
@@ -468,7 +481,7 @@ class JarvisServerIDE:
             prompt:         Prompt iniziale già formattato con gli schemi tool.
             max_new_tokens: Limite token per ogni generazione.
         """
-        lock_acquired = self.model_lock.acquire(blocking=False)
+        lock_acquired = self.model_lock.acquire(timeout=120)
 
         if not lock_acquired:
             error_payload = {
@@ -487,6 +500,10 @@ class JarvisServerIDE:
             MAX_TOOL_CALLS = 6
 
             for attempt in range (MAX_TOOL_CALLS + 1):
+                if disconnect_event is not None and disconnect_event.is_set():
+                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Client disconnesso")
+                    return
+
                 print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS + 1} — Generazione in corso...")
                 raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
                 print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
@@ -583,8 +600,7 @@ class JarvisServerIDE:
                 break
 
         finally:
-            self.model_lock.release()
-            yield "data: [DONE]\n\n"    
+            self.model_lock.release()    
 
     # Configura le route API per le API OpenAI-compatibili
     def _setup_routes(self):
@@ -610,6 +626,18 @@ class JarvisServerIDE:
                             except json.JSONDecodeError:
                                 func["arguments"] = {}
 
+            disconnect_event = threading.Event()
+            async def watch_disconnect():
+                while not disconnect_event.is_set():
+                    if await request.is_disconnected():
+                        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Client disconnesso")
+                        disconnect_event.set()
+                        break
+                    await asyncio.sleep(1.0)
+
+            asyncio.create_task(watch_disconnect())
+        
+            
             client_tools = data.get("tools")
             use_client_tool = False
 
@@ -637,7 +665,8 @@ class JarvisServerIDE:
                         messages,
                         prompt,
                         max_new_tokens=4096,
-                        use_client_tool=use_client_tool
+                        use_client_tool=use_client_tool,
+                        disconnect_event=disconnect_event
                     ),
                     media_type="text/event-stream"
                 )
