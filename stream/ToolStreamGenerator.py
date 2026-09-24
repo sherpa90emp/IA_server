@@ -25,6 +25,7 @@ class ToolStreamGenerator:
             max_new_tokens: Limite token per ogni generazione.
         """
         lock_acquired = self.model_lock.acquire(timeout=120)
+        response_id = f"chatcmpl-{uuid.uuid4().hex[:20]}"
 
         if not lock_acquired:
             error_payload = {
@@ -38,6 +39,20 @@ class ToolStreamGenerator:
             return
 
         try:
+            role_chunk = {
+                        "id": response_id,
+                        "model": self.model_name,
+                        "choices": [
+                            {
+                                "delta": {
+                                    "role": "assistant",
+                                },
+                                "index": 0
+                            }
+                        ]
+                    }
+            yield f"data: {json.dumps(role_chunk)}\n\n"
+
             current_message = list(message)
             current_prompt = prompt
             MAX_TOOL_CALLS = 6
@@ -48,7 +63,7 @@ class ToolStreamGenerator:
                     return
 
                 print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now()}]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
-                raw_output = ToolStreamGenerator._collect_generation(current_prompt, max_new_tokens, is_chat=True)
+                raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
                 print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
 
                 clean_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
@@ -72,7 +87,7 @@ class ToolStreamGenerator:
                             arguments[param_name] = param_value
 
                         if use_client_tool:
-                            call_id = f"call_{uuid.uuid4().hex[:24]}"
+                            call_id = f"chatcmpl-{uuid.uuid4().hex[:20]}"
                             print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {func_name} ({arguments})")
 
                             tool_call_chunk = {
@@ -81,6 +96,7 @@ class ToolStreamGenerator:
                                         "tool_calls": [{
                                             "index": 0,
                                             "id": call_id,
+                                            "model": self.model_name,
                                             "type": "function",
                                             "function": {
                                                 "name": func_name,
@@ -132,26 +148,28 @@ class ToolStreamGenerator:
 
                 for idx, chunk_text in enumerate(text_chunks):
                     is_last = (idx == len(text_chunks) - 1)
-                    chunk = {
-                        "id": f"chatcmpl-{uuid.uuid4().hex[:20]}",
+                    final_chunk = {
+                        "id": response_id,
                         "model": self.model_name,
                         "choices": [
                             {
-                                "delta": {"content": chunk_text}, 
+                                "delta": {
+                                    "content": chunk_text
+                                    }, 
                                 "index": 0,
                                 "finish_reason": "stop" if is_last else None
                             }
                         ],
                         "usage": {
-                            "prompt_tokens": 25,
-                            "completion_tokens": 42,
+                            "prompt_tokens": len(self.tokenizer.encode(current_prompt)),
+                            "completion_tokens": len(self.tokenizer.encode(final_text)),
                             "prompt_tokens_details": {
                                 "cached_tokens": 0
                             },
                             "cost": 0
                         }
                     }
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                    yield f"data: {json.dumps(final_chunk)}\n\n"
                 break
 
         finally:
