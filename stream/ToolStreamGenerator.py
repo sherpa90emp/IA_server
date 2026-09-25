@@ -3,12 +3,12 @@ import datetime
 import re
 import uuid
 import threading
-import utilities.color_logger as ColoreLog
 
+from utilities.color_logger import ColoreLog
 from tools import execute_tool
 from queue import Queue, Empty
 
-class ToolStreamGenerator:
+class ToolStreamGenerator(ColoreLog):
     # Gestisce il ciclo di chiamate tool e streaming finale
     def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int, use_client_tool: bool, disconnect_event: None):
         """

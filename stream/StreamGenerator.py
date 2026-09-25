@@ -1,8 +1,8 @@
 import json
 import threading
 import time
-import utilities.color_logger as ColoreLog
 
+from utilities.color_logger import ColoreLog
 from queue import Queue, Empty
 
 class StreamGenerator:
