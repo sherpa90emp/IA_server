@@ -2,6 +2,7 @@ import json
 import threading
 import asyncio
 import uvicorn
+import datetime
 
 import openvino_genai as ov_genai
 
@@ -259,7 +260,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             async def watch_disconnect():
                 while not disconnect_event.is_set():
                     if await request.is_disconnected():
-                        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Client disconnesso")
+                        print(f"{ColoreLog.DEBUG}[DEBUG {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Client disconnesso")
                         disconnect_event.set()
                         break
                     await asyncio.sleep(1.0)

@@ -62,7 +62,7 @@ class ToolStreamGenerator(ColoreLog):
                     print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Client disconnesso")
                     return
 
-                print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now()}]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
+                print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
                 raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
                 print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
 
@@ -73,7 +73,7 @@ class ToolStreamGenerator(ColoreLog):
                 
                 if tool_match and attempt < MAX_TOOL_CALLS:
                     tool_match_str = tool_match.group(1).strip()
-                    print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now()}]{ColoreLog.RESET} Tool call rilevata: {repr(tool_match_str[:200])}")
+                    print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Tool call rilevata: {repr(tool_match_str[:200])}")
 
                     try:
                         func_match = re.search(r"<function=([^>]+)", tool_match_str)
