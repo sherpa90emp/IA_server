@@ -81,6 +81,8 @@ class ToolStreamGenerator(ColoreLog):
                     try:
                         func_match = re.search(r"<function=([^>]+)", tool_match_str)
                         func_name = func_match.group(1) if func_match else None
+                        if not func_name:
+                            raise ValueError(f"Tool call name non rilevato: {tool_match_str[:200]}")
 
                         param_pattern = re.compile(r"<parameter=([^>]+)>\n(.*?)\n</parameter>", re.DOTALL)
                         arguments = {}
@@ -94,12 +96,13 @@ class ToolStreamGenerator(ColoreLog):
                             print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {func_name} ({arguments})")
 
                             tool_call_chunk = {
+                                "id": response_id,
+                                "model": self.model_name,
                                 "choices": [{
                                     "delta": {
                                         "tool_calls": [{
                                             "index": 0,
                                             "id": call_id,
-                                            "model": self.model_name,
                                             "type": "function",
                                             "function": {
                                                 "name": func_name,
@@ -114,11 +117,21 @@ class ToolStreamGenerator(ColoreLog):
                             yield f"data: {json.dumps(tool_call_chunk)}\n\n"
 
                             finish_chunk = {
+                                "id": response_id,
+                                "model": self.model_name,
                                 "choices": [{
                                     "delta": {},
                                     "index": 0,
                                     "finish_reason": "tool_calls"
-                                }]
+                                }],
+                                "usage": {
+                                    "prompt_tokens": len(self.tokenizer.encode(current_prompt)),
+                                    "completion_tokens": len(self.tokenizer.encode(raw_output)),
+                                    "prompt_tokens_details": {
+                                        "cached_tokens": 0
+                                    },
+                                    "cost": 0
+                                }
                             }
                             yield f"data: {json.dumps(finish_chunk)}\n\n"
                             return
@@ -149,6 +162,15 @@ class ToolStreamGenerator(ColoreLog):
                 CHUNK_SIZE = 20
                 text_chunks = [final_text[i:i + CHUNK_SIZE] for i in range(0, len(final_text), CHUNK_SIZE)] or [""]
 
+                usage = {
+                    "prompt_tokens": len(self.tokenizer.encode(current_prompt)),
+                    "completion_tokens": len(self.tokenizer.encode(final_text)),
+                    "prompt_tokens_details": {
+                        "cached_tokens": 0
+                    },
+                    "cost": 0
+                }
+
                 for idx, chunk_text in enumerate(text_chunks):
                     is_last = (idx == len(text_chunks) - 1)
                     final_chunk = {
@@ -162,16 +184,10 @@ class ToolStreamGenerator(ColoreLog):
                                 "index": 0,
                                 "finish_reason": "stop" if is_last else None
                             }
-                        ],
-                        "usage": {
-                            "prompt_tokens": len(self.tokenizer.encode(current_prompt)),
-                            "completion_tokens": len(self.tokenizer.encode(final_text)),
-                            "prompt_tokens_details": {
-                                "cached_tokens": 0
-                            },
-                            "cost": 0
-                        }
+                        ], 
                     }
+                    if is_last:
+                        final_chunk["usage"] = usage
                     yield f"data: {json.dumps(final_chunk)}\n\n"
                 break
 
