@@ -7,6 +7,7 @@ import threading
 from utilities.color_logger import ColoreLog
 from tools import execute_tool
 from queue import Queue, Empty
+from typing import Generator
 
 class ToolStreamGenerator(ColoreLog):
     # Gestisce il ciclo di chiamate tool e streaming finale
@@ -63,7 +64,9 @@ class ToolStreamGenerator(ColoreLog):
                     return
 
                 print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
-                raw_output = self._collect_generation(current_prompt, max_new_tokens, is_chat=True)
+                raw_output = yield from self._collect_generation(current_prompt, max_new_tokens, is_chat=True, disconnect_event=disconnect_event)
+                if disconnect_event is not None and disconnect_event.is_set():
+                    return
                 print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
 
                 clean_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
@@ -87,7 +90,7 @@ class ToolStreamGenerator(ColoreLog):
                             arguments[param_name] = param_value
 
                         if use_client_tool:
-                            call_id = f"chatcmpl-{uuid.uuid4().hex[:20]}"
+                            call_id = f"call-{uuid.uuid4().hex[:20]}"
                             print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {func_name} ({arguments})")
 
                             tool_call_chunk = {
@@ -176,7 +179,7 @@ class ToolStreamGenerator(ColoreLog):
             self.model_lock.release()
 
     # Esegue generazione non-streaming del modello
-    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool, disconnect_event=None) -> str:
+    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool, disconnect_event=None) -> Generator[str, None, str]:
         """
         Esegue la generazione e restituisce l'output completo come stringa.
         Non effettua streaming verso il client.
@@ -216,27 +219,30 @@ class ToolStreamGenerator(ColoreLog):
         think_buffer = ""
         found_and_think = False
 
-        while True:
-            try:
-                token = token_queue.get(timeout=5.0)
-            except Empty:
-                continue
+        try:
+            while True:
+                try:
+                    token = token_queue.get(timeout=15.0)
+                except Empty:
+                    yield ": heartbeat\n\n"
+                    continue
 
-            if token is None:
-                break
+                if token is None:
+                    break
 
-            if not found_and_think:
-                think_buffer += token
-                _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
-                print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
+                if not found_and_think:
+                    think_buffer += token
+                    _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+                    print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
 
-                if "</think>" in think_buffer:
-                    found_and_think = True
-                    after_think = think_buffer.split("</think>", 1)[-1]
-                    token = after_think
+                    if "</think>" in think_buffer:
+                        found_and_think = True
+                        after_think = think_buffer.split("</think>", 1)[-1]
+                        token = after_think
 
-            output += token
-
-        thread.join()
+                output += token
+        finally:
+            stop_event.set()
+            thread.join()
 
         return output
