@@ -3,11 +3,15 @@ import datetime
 import re
 import uuid
 import threading
+import time
 
 from utilities.color_logger import ColoreLog
 from tools import execute_tool
 from queue import Queue, Empty
 from typing import Generator
+from rich.console import Console
+from rich.live import Live
+from rich.text import Text
 
 class ToolStreamGenerator(ColoreLog):
     # Gestisce il ciclo di chiamate tool e streaming finale
@@ -236,11 +240,25 @@ class ToolStreamGenerator(ColoreLog):
         found_and_think = False
 
         try:
+            console = Console()
+            
+            live = Live(console=console, refresh_per_second=8, transient=False)
+            live.start()
+
+            last_sent_hb = time.monotonic()
+            HEARTBEAT = 15
+
             while True:
                 try:
+                    now = time.monotonic()
+                    if now - last_sent_hb >= HEARTBEAT:
+                        yield ": heartbeat\n\n"
+                        last_sent_hb = now
+                        continue
+
                     token = token_queue.get(timeout=15.0)
+
                 except Empty:
-                    yield ": heartbeat\n\n"
                     continue
 
                 if token is None:
@@ -249,16 +267,17 @@ class ToolStreamGenerator(ColoreLog):
                 if not found_and_think:
                     think_buffer += token
                     _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
-                    print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
+                    live.update(Text(f"Pensiero: {_display}", style="dim cyan"))
 
                     if "</think>" in think_buffer:
                         found_and_think = True
                         after_think = think_buffer.split("</think>", 1)[-1]
-                        token = after_think
-
-                output += token
+                        output += after_think
+                else:
+                    output += token
         finally:
             stop_event.set()
             thread.join()
+            live.stop()
 
         return output
