@@ -43,8 +43,8 @@ def messaggio_iniziale(local_models):
             print(f"{i} - {model}")
 
     print(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Inserisci il numero o il nome del modello che desideri usare: ")
-    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premendo INVIO verrà usato il modello predefinito.")
-    print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scrivi EXIT per uscire.\n")
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Premendo INVIO verrà usato il modello predefinito.")
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scrivi EXIT per uscire.\n")
 
 # Funzione per stampare un messaggio di avviso in caso di errore
 def messaggio_next_error():
@@ -52,8 +52,8 @@ def messaggio_next_error():
     Stampa un messaggio di avviso quando il modello selezionato non è presente nei repository di Huggingface.
     """
 
-    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Il modello selezionato non era presente nei repository di Huggingface.\n")
-    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Inserire un modello corretto\n")
+    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Il modello selezionato non era presente nei repository di Huggingface.")
+    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Inserire un modello corretto")
 
 # Funzione per ottenere l'input dell'utente
 def get_user_input(local_models):
@@ -82,7 +82,7 @@ def get_user_input(local_models):
             if 0 <= i < len(local_models):
                 return local_models[i]
             else:
-                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido, inserisci quello corretto.\n")
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Numero non valido, inserisci quello corretto.")
 
         return user_input
 
@@ -100,45 +100,45 @@ def check_and_prepare_model(model_name, model_path):
     """
 
     if not os.path.exists(model_path) :
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello non trovato in {model_path} \n")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Modello non trovato in {model_path}")
         
-        confirm = input(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}\nVuoi scaricarlo/esportarlo ora (s/n): ")
+        confirm = input(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Vuoi scaricarlo/esportarlo ora (s/n): ")
 
         if confirm.lower() != 's' :
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Inserisci un altro modello.\n")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Operazione annullata. Inserisci un altro modello.")
             return None
                     
         if "OpenVINO" in model_name or "-ov" in model_name :
-            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Scaricamento del modello {model_name} ottimizzato da Huggingface...\n")
+            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Scaricamento del modello {model_name} ottimizzato da Huggingface...")
             snapshot_download(model_name, local_dir=model_path)
-            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Download completato.\n")
+            print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET}Download completato.")
         else :
-            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}\n")
+            print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Modello OpenVINO non trovato. Avvio procedura di esportazione per {model_name}")
 
             model_hf_type = check_model_type_from_hf(model_name)
 
             if model_hf_type is None :
-                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Impossibile determinare il tipo di modello da HF.\n")
+                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Impossibile determinare il tipo di modello da HF.")
                 return None
 
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_hf_type.upper()}. Avvio procedura di esportazione per {model_name}...\n")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Modello {model_hf_type.upper()}. Avvio procedura di esportazione per {model_name}...")
 
             conversion_model(model_name, model_path, model_hf_type)
 
         model_type = check_type_model(model_path)
 
         if model_type is None :
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.\n")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Operazione annullata. Tipo di modello non riconosciuto.\n")
             return None
         else:
             return model_name, model_path, model_type
         
     else :
-        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello {model_name} già presente localmente. Procedo al caricamento...\n")
+        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Modello {model_name} già presente localmente. Procedo al caricamento...")
         model_type = check_type_model(model_path)
 
         if model_type is None :
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Operazione annullata. Tipo di modello non riconosciuto.\n")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Operazione annullata. Tipo di modello non riconosciuto.")
             return None
         else:
             return model_name, model_path, model_type
@@ -180,7 +180,7 @@ def get_model_selection() :
                 continue
 
         except Exception as e :
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore durante la selezione del modello: {e}\n")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Errore durante la selezione del modello: {e}")
             errore_rilevato = True
 
 def check_type_model(model_path) :
@@ -198,7 +198,7 @@ def check_type_model(model_path) :
 
     
     if not os.path.exists(type_model_path) :
-        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Path inesistente. Inserire un path valido.\n")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Path inesistente. Inserire un path valido.")
         return None
     
     with open(type_model_path, "r") as f:
@@ -215,7 +215,7 @@ def check_type_model(model_path) :
                 return model_type
             
         except Exception as e :
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Key inesistente: {e}\n")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Key inesistente: {e}")
             return None
 
 def check_model_type_from_hf(model_name) :
@@ -239,7 +239,7 @@ def check_model_type_from_hf(model_name) :
             return "llm"
             
     except Exception as e:
-        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Impossibile ottenere il tipo di modello da Hugging Face: {e}\n")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Impossibile ottenere il tipo di modello da Hugging Face: {e}")
         return None
 
 def conversion_model(model_name, model_path, model_hf_type) :
@@ -271,12 +271,12 @@ def conversion_model(model_name, model_path, model_hf_type) :
     tokenizer.save_pretrained(model_path)
     export_tokenizer(tokenizer, model_path)
     
-    print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Conversione completata. Modello salvato in: {model_path}\n")
+    print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET}Conversione completata. Modello salvato in: {model_path}")
     del ov_model
 
 
 def richiesta_quantization_config(model_hf_type) :
-    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Inizio procedura settaggio parametri di conversione del tipo di modello {str(model_hf_type).upper()} \n")
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Inizio procedura settaggio parametri di conversione del tipo di modello {str(model_hf_type).upper()}")
 
     bits_model = [4, 8]
     sym_model = [True, False]
@@ -298,8 +298,8 @@ def richiesta_quantization_config(model_hf_type) :
     return quantization_config
 
 def stampa_richiesta_valori_quant_config(parametro, valore):
-    print(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET} Inserisci il valore, es {parametro}:\n")
-    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premere INVIO per usare il valore di default: {valore}\n")
+    print(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Inserisci il valore, es {parametro}:")
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Premere INVIO per usare il valore di default: {valore}")
 
 def richiesta_valori(valori_ammessi, valore_default, tipo_conversione):
     while True:
@@ -316,16 +316,16 @@ def richiesta_valori(valori_ammessi, valore_default, tipo_conversione):
                 elif valore_input.lower() == "false":
                     valore = False
                 else:
-                    raise ValueError("Valore booleano non riconosciuto. Inserire True o False o premere invio per utilizzare il valore di default.\n")
+                    raise ValueError("Valore booleano non riconosciuto. Inserire True o False o premere invio per utilizzare il valore di default.")
                 return valore
             else:    
                 valore = tipo_conversione(valore_input)
                 if valore in valori_ammessi:
                     return valore
                 else:
-                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Valore non valido. Inserire un valore valido.\n")
+                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Valore non valido. Inserire un valore valido.")
         except ValueError as e:
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Input non valido. Inserire un valore valido.\n Error: {e}\n")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Input non valido. Inserire un valore valido.\n Error: {e}")
 
 def load_draft_model():
 
@@ -342,41 +342,41 @@ def load_draft_model():
         params = recupero_dimensione_modello_dal_nome(model)
 
         if params is None:
-            print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Parametri non trovati per il modello {model}\n")
+            print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Parametri non trovati per il modello {model}")
             continue
 
         if params <= max_draft_params:
             candidati.append((model, model_path, params))
 
     if not candidati:
-        print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Nessun modello con parametri inferiore o uguale a {max_draft_params}B trovato.\n")
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding non disponibile.\n")
+        print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Nessun modello con parametri inferiore o uguale a {max_draft_params}B trovato.")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Speculative decoding non disponibile.")
         return None
 
     if len(candidati) == 1:
         name, path, params_draft = candidati[0]
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello draft selezionato: {name} con {params_draft}B di parametri\n")
-        confirm = input(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Usare questo modello? (s/n): \n")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Modello draft selezionato: {name} con {params_draft}B di parametri")
+        confirm = input(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Usare questo modello? (s/n):")
 
         if confirm.lower() == 's':
             return name, path
         else:
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding disattivato.\n")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Speculative decoding disattivato.")
             return None, None
     else:
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Seleziona il modello draft da usare:\n")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Seleziona il modello draft da usare:")
 
         for i, (name, path, params_draft) in enumerate(candidati):
             print(f"{i+1} - {name} con {params_draft}B di parametri")
 
-        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Premere INVIO per disattivare speculative decoding.")
+        print(f"\n{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Premere INVIO per disattivare speculative decoding.")
 
         while True:
             user_input = input()
 
             if not user_input:
-                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Nessun modello selezionato.\n")
-                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Speculative decoding disattivato.\n")
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Nessun modello selezionato.")
+                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Speculative decoding disattivato.")
                 return None, None
 
             if user_input.isdigit():
@@ -384,9 +384,9 @@ def load_draft_model():
 
                 if 0 <= idx < len(candidati):
                     name, path, params_draft = candidati[idx]
-                    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Modello draft selezionato: {name} con {params_draft}B di parametri\n")
+                    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Modello draft selezionato: {name} con {params_draft}B di parametri")
                     return name, path
                 else:
-                    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Numero non valido.\n")
+                    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Numero non valido.")
             else:
-                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Input non valido. Inserire un numero valido.\n")            
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Input non valido. Inserire un numero valido.")            

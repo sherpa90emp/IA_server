@@ -260,7 +260,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             async def watch_disconnect():
                 while not disconnect_event.is_set():
                     if await request.is_disconnected():
-                        print(f"{ColoreLog.DEBUG}[DEBUG {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Client disconnesso")
+                        print(f"{ColoreLog.DEBUG}[DEBUG {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET}Client disconnesso")
                         disconnect_event.set()
                         break
                     await asyncio.sleep(1.0)
@@ -271,8 +271,8 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             client_tools = data.get("tools")
             use_client_tool = False
 
-            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} keys ricevute dal client: {list(data.keys())}")
-            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
+            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}keys ricevute dal client: {list(data.keys())}")
+            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
             #print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} messages: {messages}")
             
             if client_tools:
@@ -294,7 +294,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                     self.tool_stream_generator(
                         messages,
                         prompt,
-                        max_new_tokens=4096,
+                        max_new_tokens=16384,
                         use_client_tool=use_client_tool,
                         disconnect_event=disconnect_event
                     ),

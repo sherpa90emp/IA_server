@@ -81,15 +81,15 @@ def avvio_jarvis():
                 - Esce dal programma
                 """
 
-                print(f"\n{ColoreLog.STOP}[STOP]{ColoreLog.RESET} Server Jarvis arrestato\n")
+                print(f"\n{ColoreLog.STOP}[STOP]{ColoreLog.RESET}Server Jarvis arrestato")
                 sys.exit(0)
 
             else:
-                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Scelta non valida.")
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Scelta non valida.")
                     
         except Exception as e:
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Inserire un numero valido.")
-            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore: {e}")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Inserire un numero valido.")
+            print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Errore: {e}")
         
 
     

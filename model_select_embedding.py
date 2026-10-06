@@ -14,7 +14,7 @@ def conferma_uso_emb():
         - Delega alla funzione `get_local_models_emb()` per la selezione del modello.
     """
 
-    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Procedo alla selezione dei modelli di embedding")
+    print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Procedo alla selezione dei modelli di embedding")
     return get_local_models_emb()
 
 def get_local_models_emb():
@@ -36,7 +36,7 @@ def get_local_models_emb():
     repo_id = f"OpenVINO/{default_name}"
 
     if not os.path.exists(model_dir):
-        print( f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Cartella {model_dir} non trovata.")
+        print( f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Cartella {model_dir} non trovata.")
         return None, None
     
     local_models_emb = [
@@ -52,37 +52,37 @@ def get_local_models_emb():
 
         while True:
             try:
-                scelta = int(input(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET} Quale modello di embedding vuoi usare? ")) -1
+                scelta = int(input(f"\n{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Quale modello di embedding vuoi usare? ")) -1
 
                 if 0 <= scelta < len(local_models_emb):
                     selected_name = local_models_emb[scelta]
                     selected_path = os.path.join(model_dir, selected_name)
                     return selected_name, selected_path
                 else:
-                    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Scelta non valida.")  
+                    print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Scelta non valida.")  
 
             except ValueError:
-                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Inserisci un numero presente nell'elenco.")
+                print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Inserisci un numero presente nell'elenco.")
 
     else:
-        print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Non sono stati trovati modelli custom di embedding")
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Procedo al caricamento del modello predefinito {default_name}")
+        print(f"{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Non sono stati trovati modelli custom di embedding")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Procedo al caricamento del modello predefinito {default_name}")
 
         default_path = os.path.join(model_dir, default_name)
 
         if not os.path.exists(default_path):
-            print(f"\n{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET} Modello predefinito non trovato localmente.")
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Download da Hugging Face in corso...")
+            print(f"\n{ColoreLog.WARNING}[WARNING]{ColoreLog.RESET}Modello predefinito non trovato localmente.")
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Download da Hugging Face in corso...")
 
             try:
                 snapshot_download(
                     repo_id=repo_id,
                     local_dir=default_path
                 )
-                print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Download completato.")
+                print(f"\n{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET}Download completato.")
 
             except Exception as e:
-                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Download fallito: {e}")
+                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Download fallito: {e}")
                 return None, None
             
         return default_name, default_path
@@ -107,7 +107,7 @@ def load_model_emb(emb_name, emb_path):
     model_device_name_GPU, model_device_name_CPU, target_device = rileva_device()
 
     if emb_path and os.path.exists(emb_path):
-        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} Caricamento modello Embedding {emb_name} sulla {model_device_name_GPU} da {emb_path}")
+        print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET}Caricamento modello Embedding {emb_name} sulla {model_device_name_GPU} da {emb_path}")
         emb_model = OVModelForFeatureExtraction.from_pretrained(
             emb_path,
             device=target_device
@@ -115,9 +115,9 @@ def load_model_emb(emb_name, emb_path):
 
         emb_tokenizer = AutoTokenizer.from_pretrained(emb_path)
 
-        print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET} Modello caricato correttamente su {model_device_name_GPU}") 
+        print(f"{ColoreLog.SUCCESS}[SUCCESS]{ColoreLog.RESET}Modello caricato correttamente su {model_device_name_GPU}") 
         return emb_model, emb_tokenizer
     
     else:
-        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Caricamento del modello interrotto.")
+        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Caricamento del modello interrotto.")
         return None, None    
