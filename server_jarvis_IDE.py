@@ -31,6 +31,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
         # --- KV-Cache configurazione ---
         self.kv_cache_quantization = "f16"
         self.cache_eviction_enabled = True
+        self.scheduler_config = None
 
         # --- Speculative Decoding / Tree Search ---
         self.model_draft_name = model_draft
@@ -56,7 +57,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
         model_device_name_GPU, model_device_name_CPU, gpu_device_id = rileva_device()
      
         try :
-            print(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET} Desideri utilizzare il metodo di caricamento HETERO? s/n Premendo INVIO si utilizzarà il metodo HETERO")
+            print(f"{ColoreLog.INPUT}[INPUT]{ColoreLog.RESET}Desideri utilizzare il metodo di caricamento HETERO? s/n Premendo INVIO si utilizzarà il metodo HETERO")
             user_input_caricamento_gpu = input()
 
             if user_input_caricamento_gpu.lower() == "s" or not user_input_caricamento_gpu :
@@ -65,20 +66,24 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                 target_device = "GPU"
             else:
                 print(f"")
+                
 
             pipeline_kwargs = {}
             pipeline_kwargs["KV_CACHE_PRECISION"] = self.kv_cache_quantization
             print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} KV_CACHE_PRECISION: {self.kv_cache_quantization}")
 
-            scheduler_config = None
+            scheduler_config = self.scheduler_config or ov_genai.SchedulerConfig()
+            scheduler_config.cache_size=8
+            scheduler_config.max_num_seqs=4
+            scheduler_config.dynamic_split_fuse=True
+            scheduler_config.enable_prefix_caching=True
 
             if self.cache_eviction_enabled:
-                scheduler_config = scheduler_config or ov_genai.SchedulerConfig()
                 scheduler_config.use_cache_eviction = True
                 scheduler_config.cache_eviction_config = ov_genai.CacheEvictionConfig(
                     256,                                                                    # start_size
                     512,                                                                    # recent_size
-                    4096,                                                                   # max_cache_size
+                    65536,                                                                  # max_cache_size
                     aggregation_mode=ov_genai.AggregationMode.NORM_SUM,
                     apply_rotation=True,
                     snapkv_window_size=8,
@@ -90,12 +95,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             if self.model_draft_path and target_device.startswith("HETERO"):
                 draft_device = gpu_device_id[0]
                 draft_model = ov_genai.draft_model(self.model_draft_path, draft_device)
-                scheduler_config = scheduler_config or ov_genai.SchedulerConfig()
-                scheduler_config.cache_size=4
-                scheduler_config.max_num_seqs=4
-                scheduler_config.dynamic_split_fuse=True
-                scheduler_config.enable_prefix_caching=True
-
+                
                 pipeline_kwargs["DRAFT_MODEL"] = draft_model
                 
                 self.draft_pipe = draft_model
@@ -219,16 +219,16 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             config.presence_penalty = 1.5
             config.repetition_penalty = 1.0
 
-        #Non funzionante con OpenVino al momento
+        # Non funzionante con OpenVino al momento
         
         # Speculative decoding / Tree Search: abilitato solo se il draft model è caricato
-        #if self.draft_pipe is not None:
-            #config.do_sample = False
-            #config.num_assistant_tokens = self.num_assistant_tokens
-            #config.branching_factor = self.branching_factor
-            #config.tree_depth = self.tree_depth
-            #print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Tree search: assistant_tokens={self.num_assistant_tokens}, "
-                  #f"branching_factor={self.branching_factor}, tree_depth={self.tree_depth}")
+        if self.draft_pipe is not None:
+            config.do_sample = False
+            config.num_assistant_tokens = self.num_assistant_tokens
+            config.branching_factor = self.branching_factor
+            config.tree_depth = self.tree_depth
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Tree search: assistant_tokens={self.num_assistant_tokens}, "
+                  f"branching_factor={self.branching_factor}, tree_depth={self.tree_depth}")
 
         return config
 
@@ -304,7 +304,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                 return StreamingResponse(
                     self.stream_generator(
                         prompt, 
-                        max_new_tokens=4096, 
+                        max_new_tokens=16384, 
                         is_chat=True,
                         **data
                         ), 
