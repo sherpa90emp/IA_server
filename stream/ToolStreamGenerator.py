@@ -10,8 +10,6 @@ from tools import execute_tool
 from queue import Queue, Empty
 from typing import Generator
 from rich.console import Console
-from rich.live import Live
-from rich.text import Text
 
 class ToolStreamGenerator(ColoreLog):
     # Gestisce il ciclo di chiamate tool e streaming finale
@@ -64,23 +62,23 @@ class ToolStreamGenerator(ColoreLog):
 
             for attempt in range (MAX_TOOL_CALLS + 1):
                 if disconnect_event is not None and disconnect_event.is_set():
-                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Client disconnesso")
+                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Client disconnesso")
                     return
 
-                print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
+                print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET}Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
                 raw_output = yield from self._collect_generation(current_prompt, max_new_tokens, is_chat=True, disconnect_event=disconnect_event)
                 if disconnect_event is not None and disconnect_event.is_set():
                     return
-                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
+                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
 
                 clean_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
-                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Clean output dopo rimozione <think>: {repr(clean_output[:200])}")
+                print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Clean output dopo rimozione <think>: {repr(clean_output[:200])}")
 
                 tool_match = re.search(r"<tool_call>(.*?)</tool_call>", clean_output, flags=re.DOTALL)
                 
                 if tool_match and attempt < MAX_TOOL_CALLS:
                     tool_match_str = tool_match.group(1).strip()
-                    print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET} Tool call rilevata: {repr(tool_match_str[:200])}")
+                    print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET}Tool call rilevata: {repr(tool_match_str[:200])}")
 
                     try:
                         func_match = re.search(r"<function=([^>]+)", tool_match_str)
@@ -97,7 +95,7 @@ class ToolStreamGenerator(ColoreLog):
 
                         if use_client_tool:
                             call_id = f"call-{uuid.uuid4().hex[:20]}"
-                            print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET} Inoltro tool_call al client: {func_name} ({arguments})")
+                            print(f"{ColoreLog.INFO}[TOOL_STREAM]{ColoreLog.RESET}Inoltro tool_call al client: {func_name} ({arguments})")
 
                             tool_call_chunk = {
                                 "id": response_id,
@@ -140,9 +138,9 @@ class ToolStreamGenerator(ColoreLog):
                             yield f"data: {json.dumps(finish_chunk)}\n\n"
                             return
 
-                        print(f"{ColoreLog.INFO}[TOOL]{ColoreLog.RESET} Chiamata {func_name} ({arguments})")
+                        print(f"{ColoreLog.INFO}[TOOL]{ColoreLog.RESET}Chiamata {func_name} ({arguments})")
                         result = execute_tool(func_name, arguments)
-                        print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET} Risultato: {result[:120]}")
+                        print(f"{ColoreLog.SUCCESS}[TOOL]{ColoreLog.RESET}Risultato: {result[:120]}")
 
                         current_message.append({"role": "assistant", "content": raw_output})
                         current_message.append({"role": "tool", "content": result, "name": func_name})
@@ -155,13 +153,13 @@ class ToolStreamGenerator(ColoreLog):
                         continue
 
                     except (json.JSONDecodeError, Exception) as e:
-                        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore parsing tool call: {e}")
+                        print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Errore parsing tool call: {e}")
                 
                 final_text = re.sub(r"<\|[^|]*\|+>", "", clean_output).strip()
                 final_text = re.sub(r"<tool_call>.*?</tool_call>", "", final_text, flags=re.DOTALL).strip()
                 final_text = re.sub(r"<tool_response>.*?</tool_response>", "", final_text, flags=re.DOTALL).strip()
 
-                print(f"{ColoreLog.SUCCESS}[DEBUG]{ColoreLog.RESET} Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
+                print(f"{ColoreLog.SUCCESS}[DEBUG]{ColoreLog.RESET}Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
 
                 CHUNK_SIZE = 20
                 text_chunks = [final_text[i:i + CHUNK_SIZE] for i in range(0, len(final_text), CHUNK_SIZE)] or [""]
@@ -228,7 +226,7 @@ class ToolStreamGenerator(ColoreLog):
                 config = self._build_generation_config(max_new_tokens, is_chat)
                 self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
             except Exception as e:
-                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore generazione: {e}")
+                print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Errore generazione: {e}")
             finally:
                 token_queue.put(None)
         
@@ -242,8 +240,7 @@ class ToolStreamGenerator(ColoreLog):
         try:
             console = Console()
             
-            live = Live(console=console, refresh_per_second=8, transient=False)
-            live.start()
+            console.print("Pensiero:", style="bold dim cyan")
 
             last_sent_hb = time.monotonic()
             HEARTBEAT = 15
@@ -265,9 +262,8 @@ class ToolStreamGenerator(ColoreLog):
                     break
 
                 if not found_and_think:
+                    console.print(token, end="", style="dim cyan", markup=False)
                     think_buffer += token
-                    _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
-                    live.update(Text(f"Pensiero: {_display}", style="dim cyan"))
 
                     if "</think>" in think_buffer:
                         found_and_think = True
@@ -278,6 +274,5 @@ class ToolStreamGenerator(ColoreLog):
         finally:
             stop_event.set()
             thread.join()
-            live.stop()
 
         return output
