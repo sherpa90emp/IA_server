@@ -4,6 +4,7 @@ import time
 
 from utilities.color_logger import ColoreLog
 from queue import Queue, Empty
+from rich.console import Console
 
 class StreamGenerator:
     # Genera output in streaming con controllo token
@@ -55,7 +56,7 @@ class StreamGenerator:
                     self.pipe.generate(prompt, generation_config=config, streamer=ov_streamer)
 
                 except Exception as e :
-                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET} Errore generazione: {e}")
+                    print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Errore generazione: {e}")
 
                 finally : 
                     token_queue.put(None)
@@ -71,11 +72,14 @@ class StreamGenerator:
                 full_response_text = ""
                 start_time = time.time()
                 ttft = start_time
-                print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione in corso...")
+
+                console = Console()
 
                 BATCH_SIZE = 4
                 batch_buffer = ""
 
+                console.print("Pensiero:", style="bold dim cyan")
+                
                 while True :
                     try :
                         token = token_queue.get(timeout=2.0)
@@ -105,7 +109,7 @@ class StreamGenerator:
                         response_time = time.time() - ttft
                         token_count_risposta = len(self.tokenizer.encode(full_response_text))
                         rate = token_count_risposta / response_time if response_time > 0 else 0
-                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Generazione completata in {response_time:.2f} secondi. Rate: {rate:.2f} token/s. Token generati: {token_count_risposta}\n")
+                        print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Generazione completata in {response_time:.2f} secondi. Rate: {rate:.2f} token/s. Token generati: {token_count_risposta}\n")
                         break
 
                     if not is_chat :
@@ -118,9 +122,8 @@ class StreamGenerator:
                         continue
 
                     if not found_and_think:
+                        console.print(token, end="", style="dim cyan", markup=False)
                         think_buffer += token
-                        _display = think_buffer.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
-                        print(f"\r{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero: {_display}", end="", flush=True)
                         
                         if "</think>" in think_buffer:
                             found_and_think = True
@@ -131,8 +134,8 @@ class StreamGenerator:
 
                             ttlt_think = time.time() - start_time            
 
-                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Pensiero completato in {ttlt_think:.2f} secondi. Token: {token_count_think}. Rate: {token_count_think / max(ttlt_think, 0.001):.1f} token/s.")
-                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET} Token di chiusura: {repr(token)} was_thinking: {found_and_think} think_buffer: {repr(think_buffer)}")
+                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Pensiero completato in {ttlt_think:.2f} secondi. Token: {token_count_think}. Rate: {token_count_think / max(ttlt_think, 0.001):.1f} token/s.")
+                            print(f"\n{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Token di chiusura: {repr(token)} was_thinking: {found_and_think} think_buffer: {repr(think_buffer)}")
                             
                             think_buffer = ""
 
