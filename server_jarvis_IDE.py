@@ -273,7 +273,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
 
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}keys ricevute dal client: {list(data.keys())}")
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
-            #print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET} messages: {messages}")
+            print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}messages: {messages}")
             
             if client_tools:
                 schemas = client_tools
