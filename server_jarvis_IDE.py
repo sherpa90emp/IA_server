@@ -29,13 +29,13 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator, ):
         self.tokenizer = None
         self.draft_pipe = None
 
-        self.PROFILE_QWEN_27B = ModelProfile()
-        self.PROFILE_QWEN_35B_A3B = ModelProfile()
+        PROFILE_QWEN_27B = ModelProfile()
+        PROFILE_QWEN_35B_A3B = ModelProfile()
 
         if "Qwen3.8" in self.model_name:
-            self.PROFILE = self.PROFILE_QWEN_27B
+            self.PROFILE = PROFILE_QWEN_27B
         else:
-            self.PROFILE = self.PROFILE_QWEN_35B_A3B
+            self.PROFILE = PROFILE_QWEN_35B_A3B
 
         # --- KV-Cache configurazione ---
         self.scheduler_config = None
@@ -43,9 +43,9 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator, ):
         # --- Speculative Decoding / Tree Search ---
         self.model_draft_name = model_draft
         self.model_draft_path = model_draft_path
-        self.num_assistant_tokens = 5       # token candidati totali inviati al target model
-        self.branching_factor = 2           # candidati per nodo dell'albero di ricerca
-        self.tree_depth = 2                 # profondità lookahead del draft model
+        self.num_assistant_tokens = 5               # token candidati totali inviati al target model
+        self.branching_factor = 2                   # candidati per nodo dell'albero di ricerca
+        self.tree_depth = 2                         # profondità lookahead del draft model
 
         self._setup_routes()
 
