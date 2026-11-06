@@ -14,8 +14,9 @@ from utilities.general_func import rileva_device
 from tools import get_schemas
 from stream.StreamGenerator import StreamGenerator
 from stream.ToolStreamGenerator import ToolStreamGenerator
+from models_config import ModelProfile
 
-class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
+class JarvisServerIDE(StreamGenerator, ToolStreamGenerator, ):
     # Inizializza il server con modello e configurazioni base
     def __init__(self, model_name, model_path, model_type, model_draft, model_draft_path):
         self.model_name = model_name
@@ -28,9 +29,15 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
         self.tokenizer = None
         self.draft_pipe = None
 
+        self.PROFILE_QWEN_27B = ModelProfile()
+        self.PROFILE_QWEN_35B_A3B = ModelProfile()
+
+        if "Qwen3.8" in self.model_name:
+            self.PROFILE = self.PROFILE_QWEN_27B
+        else:
+            self.PROFILE = self.PROFILE_QWEN_35B_A3B
+
         # --- KV-Cache configurazione ---
-        self.kv_cache_quantization = "f16"
-        self.cache_eviction_enabled = True
         self.scheduler_config = None
 
         # --- Speculative Decoding / Tree Search ---
@@ -69,26 +76,26 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                 
 
             pipeline_kwargs = {}
-            pipeline_kwargs["KV_CACHE_PRECISION"] = self.kv_cache_quantization
-            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} KV_CACHE_PRECISION: {self.kv_cache_quantization}")
+            pipeline_kwargs["KV_CACHE_PRECISION"] = self.PROFILE.kv_cache_quantization
+            print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} KV_CACHE_PRECISION: {self.PROFILE.kv_cache_quantization}")
 
             scheduler_config = self.scheduler_config or ov_genai.SchedulerConfig()
-            scheduler_config.cache_size=8
-            scheduler_config.max_num_seqs=4
-            scheduler_config.dynamic_split_fuse=True
-            scheduler_config.enable_prefix_caching=True
+            scheduler_config.cache_size=self.PROFILE.cache_size
+            scheduler_config.max_num_seqs=self.PROFILE.max_num_seqs
+            scheduler_config.dynamic_split_fuse=self.PROFILE.dynamic_split_fuse
+            scheduler_config.enable_prefix_caching=self.PROFILE.enable_prefix_caching
 
-            if self.cache_eviction_enabled:
+            if PROFILE.cache_eviction_enabled:
                 scheduler_config.use_cache_eviction = True
                 scheduler_config.cache_eviction_config = ov_genai.CacheEvictionConfig(
-                    256,                                                                    # start_size
-                    512,                                                                    # recent_size
-                    65536,                                                                  # max_cache_size
-                    aggregation_mode=ov_genai.AggregationMode.NORM_SUM,
-                    apply_rotation=True,
-                    snapkv_window_size=8,
+                    self.PROFILE.start_size,                                                                    
+                    self.PROFILE.recent_size,                                                                    
+                    self.PROFILE.max_cache_size,                                                                  
+                    aggregation_mode=ov_genai.AggregationMode[self.PROFILE.aggregation_mode],
+                    apply_rotation=self.PROFILE.apply_rotation,
+                    snapkv_window_size=self.PROFILE.snapkv_window_size,
                 )
-                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} EVICTION: {self.cache_eviction_enabled}")
+                print(f"{ColoreLog.INFO}[INFO]{ColoreLog.RESET} EVICTION: {self.PROFILE.cache_eviction_enabled}")
 
             draft_model = None
 
@@ -211,13 +218,13 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             config.presence_penalty = 1.5
         else:
             # Chat: sampling con penalità anti-ripetizione
-            config.do_sample = True
-            config.temperature = 1.0
-            config.top_p = 0.95
-            config.top_k = 20
-            config.min_p = 0.0
-            config.presence_penalty = 1.5
-            config.repetition_penalty = 1.0
+            config.do_sample = self.PROFILE.do_sample
+            config.temperature = self.PROFILE.temperature
+            config.top_p = self.PROFILE.top_p
+            config.top_k = self.PROFILE.top_k
+            config.min_p = self.PROFILE.min_p
+            config.presence_penalty = self.PROFILE.presence_penalty
+            config.repetition_penalty = self.PROFILE.repetition_penalty
 
         # Non funzionante con OpenVino al momento
         
@@ -294,7 +301,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                     self.tool_stream_generator(
                         messages,
                         prompt,
-                        max_new_tokens=16384,
+                        max_new_tokens=self.PROFILE.max_new_tokens,
                         use_client_tool=use_client_tool,
                         disconnect_event=disconnect_event
                     ),
@@ -304,7 +311,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                 return StreamingResponse(
                     self.stream_generator(
                         prompt, 
-                        max_new_tokens=16384, 
+                        max_new_tokens=self.PROFILE.max_new_tokens, 
                         is_chat=True,
                         **data
                         ), 
