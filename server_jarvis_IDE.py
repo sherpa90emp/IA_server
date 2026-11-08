@@ -14,7 +14,7 @@ from utilities.general_func import rileva_device
 from tools import get_schemas
 from stream.StreamGenerator import StreamGenerator
 from stream.ToolStreamGenerator import ToolStreamGenerator
-from models_config import ModelProfile
+from models_config.ModelProfile import ModelProfile
 
 class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
     # Inizializza il server con modello e configurazioni base
@@ -289,6 +289,10 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                 add_generation_prompt=True,
                 reasoning_effort="medium"
             )
+
+            prompt_length = (len(self.tokenizer.encode(prompt)))
+
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Prompt lunghezza: {prompt_length}")
             
             if schemas:
                 return StreamingResponse(
