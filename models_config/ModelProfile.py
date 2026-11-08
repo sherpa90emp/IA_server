@@ -30,3 +30,10 @@ class ModelProfile:
     snapkv_window_size: int = 8
 
     max_new_tokens: int = 16384
+
+    @classmethod
+    def scelta_profile(cls, model_name: str) -> "ModelProfile":
+        if "Qwen3.8" in model_name:
+            return cls()
+        else:
+            return cls(cache_eviction_enabled=False)

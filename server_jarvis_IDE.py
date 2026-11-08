@@ -16,7 +16,7 @@ from stream.StreamGenerator import StreamGenerator
 from stream.ToolStreamGenerator import ToolStreamGenerator
 from models_config import ModelProfile
 
-class JarvisServerIDE(StreamGenerator, ToolStreamGenerator, ):
+class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
     # Inizializza il server con modello e configurazioni base
     def __init__(self, model_name, model_path, model_type, model_draft, model_draft_path):
         self.model_name = model_name
@@ -29,14 +29,8 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator, ):
         self.tokenizer = None
         self.draft_pipe = None
 
-        PROFILE_QWEN_27B = ModelProfile()
-        PROFILE_QWEN_35B_A3B = ModelProfile()
-
-        if "Qwen3.8" in self.model_name:
-            self.PROFILE = PROFILE_QWEN_27B
-        else:
-            self.PROFILE = PROFILE_QWEN_35B_A3B
-
+        self.PROFILE = ModelProfile.scelta_profile(self.model_name)
+        
         # --- KV-Cache configurazione ---
         self.scheduler_config = None
 
@@ -85,7 +79,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator, ):
             scheduler_config.dynamic_split_fuse=self.PROFILE.dynamic_split_fuse
             scheduler_config.enable_prefix_caching=self.PROFILE.enable_prefix_caching
 
-            if PROFILE.cache_eviction_enabled:
+            if self.PROFILE.cache_eviction_enabled:
                 scheduler_config.use_cache_eviction = True
                 scheduler_config.cache_eviction_config = ov_genai.CacheEvictionConfig(
                     self.PROFILE.start_size,                                                                    
