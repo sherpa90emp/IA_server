@@ -8,10 +8,19 @@ class ModelProfile:
     cache_eviction_enabled: bool = True
     kv_cache_quantization: str = "f16"
 
-    cache_size: int = 8
+    cache_size: int = 6
     max_num_seqs: int = 4
     dynamic_split_fuse: bool = True
     enable_prefix_caching: bool = True
+
+    # --- Cache eviction configurazione ---
+    start_size: int = 256               
+    recent_size: int = 512              
+    max_cache_size: int = 65536
+
+    aggregation_mode: str = "NORM_SUM"
+    apply_rotation: bool = True
+    snapkv_window_size: int = 8
 
     # Chat: sampling con penalità anti-ripetizione
     do_sample: bool = True
@@ -22,13 +31,7 @@ class ModelProfile:
     presence_penalty: float = 1.5
     repetition_penalty: float = 1.0
 
-    start_size: int = 256               
-    recent_size: int = 512              
-    max_cache_size: int = 65536            
-    aggregation_mode: str = "NORM_SUM"
-    apply_rotation: bool = True
-    snapkv_window_size: int = 8
-
+    reasoning_effort: str = "medium"
     max_new_tokens: int = 16384
 
     @classmethod
@@ -36,4 +39,11 @@ class ModelProfile:
         if "Qwen3.8" in model_name:
             return cls()
         else:
-            return cls(cache_eviction_enabled=False)
+            return cls(
+                cache_size=2,
+                max_num_seqs=1,
+                enable_prefix_caching=False,
+                cache_eviction_enabled=False, 
+                max_new_tokens=2048,
+                reasoning_effort="",
+                )

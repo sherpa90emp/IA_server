@@ -75,6 +75,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
 
             scheduler_config = self.scheduler_config or ov_genai.SchedulerConfig()
             scheduler_config.cache_size=self.PROFILE.cache_size
+
             scheduler_config.max_num_seqs=self.PROFILE.max_num_seqs
             scheduler_config.dynamic_split_fuse=self.PROFILE.dynamic_split_fuse
             scheduler_config.enable_prefix_caching=self.PROFILE.enable_prefix_caching
@@ -85,7 +86,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                     self.PROFILE.start_size,                                                                    
                     self.PROFILE.recent_size,                                                                    
                     self.PROFILE.max_cache_size,                                                                  
-                    aggregation_mode=ov_genai.AggregationMode[self.PROFILE.aggregation_mode],
+                    aggregation_mode=ov_genai.AggregationMode.NORM_SUM, #[self.PROFILE.aggregation_mode],
                     apply_rotation=self.PROFILE.apply_rotation,
                     snapkv_window_size=self.PROFILE.snapkv_window_size,
                 )
@@ -267,10 +268,16 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                     await asyncio.sleep(1.0)
 
             asyncio.create_task(watch_disconnect())
-        
+
             
+            client_effort = data.get("reasoning_effort")
+            if not client_effort:
+                client_effort = self.PROFILE.reasoning_effort
+
             client_tools = data.get("tools")
             use_client_tool = False
+
+            print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Request: {data}")
 
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}keys ricevute dal client: {list(data.keys())}")
             print(f"{ColoreLog.DEBUG}[ROUTE]{ColoreLog.RESET}tools presente: {'tools' in data} | tool_choice: {'tool_choice' in data}")
@@ -287,7 +294,7 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
                 tools=schemas,
                 tokenize=False,
                 add_generation_prompt=True,
-                reasoning_effort="medium"
+                reasoning_effort=client_effort
             )
 
             prompt_length = (len(self.tokenizer.encode(prompt)))
