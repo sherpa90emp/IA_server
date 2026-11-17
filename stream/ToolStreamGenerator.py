@@ -6,12 +6,13 @@ import threading
 import time
 
 from utilities.color_logger import ColoreLog
+from stream.helper_stream import HelperStream
 from tools import execute_tool
 from queue import Queue, Empty
 from typing import Generator
 from rich.console import Console
 
-class ToolStreamGenerator(ColoreLog):
+class ToolStreamGenerator(ColoreLog, HelperStream):
     # Gestisce il ciclo di chiamate tool e streaming finale
     def tool_stream_generator(self, message: list, prompt: str, max_new_tokens: int, use_client_tool: bool, disconnect_event: None):
         """
@@ -66,7 +67,7 @@ class ToolStreamGenerator(ColoreLog):
                     return
 
                 print(f"{ColoreLog.INFO}[TOOL_STREAM {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]{ColoreLog.RESET}Tentativo {attempt + 1}/{MAX_TOOL_CALLS} — Generazione in corso...")
-                raw_output = yield from self._collect_generation(current_prompt, max_new_tokens, is_chat=True, disconnect_event=disconnect_event)
+                raw_output = yield from self._collect_generation(current_prompt, max_new_tokens, is_chat=True, disconnect_event=disconnect_event, response_id=response_id)
                 if disconnect_event is not None and disconnect_event.is_set():
                     return
                 print(f"{ColoreLog.DEBUG}[DEBUG]{ColoreLog.RESET}Raw output ({len(raw_output)} chars): {repr(raw_output[:200])}")
@@ -155,49 +156,26 @@ class ToolStreamGenerator(ColoreLog):
                     except (json.JSONDecodeError, Exception) as e:
                         print(f"{ColoreLog.ERRORE}[ERROR]{ColoreLog.RESET}Errore parsing tool call: {e}")
                 
-                final_text = re.sub(r"<\|[^|]*\|+>", "", clean_output).strip()
-                final_text = re.sub(r"<tool_call>.*?</tool_call>", "", final_text, flags=re.DOTALL).strip()
-                final_text = re.sub(r"<tool_response>.*?</tool_response>", "", final_text, flags=re.DOTALL).strip()
-
-                print(f"{ColoreLog.SUCCESS}[DEBUG]{ColoreLog.RESET}Risposta finale ({len(final_text)} chars): {repr(final_text[:200])}")
-
-                CHUNK_SIZE = 20
-                text_chunks = [final_text[i:i + CHUNK_SIZE] for i in range(0, len(final_text), CHUNK_SIZE)] or [""]
-
                 usage = {
                     "prompt_tokens": len(self.tokenizer.encode(current_prompt)),
-                    "completion_tokens": len(self.tokenizer.encode(final_text)),
-                    "prompt_tokens_details": {
-                        "cached_tokens": 0
-                    },
-                    "cost": 0
+                    "completion_tokens": len(self.tokenizer.encode(raw_output)),
+                    "prompt_tokens_details": {"cached_tokens": 0},
+                    "cost": 0,
                 }
-
-                for idx, chunk_text in enumerate(text_chunks):
-                    is_last = (idx == len(text_chunks) - 1)
-                    final_chunk = {
-                        "id": response_id,
-                        "model": self.model_name,
-                        "choices": [
-                            {
-                                "delta": {
-                                    "content": chunk_text
-                                    }, 
-                                "index": 0,
-                                "finish_reason": "stop" if is_last else None
-                            }
-                        ], 
-                    }
-                    if is_last:
-                        final_chunk["usage"] = usage
-                    yield f"data: {json.dumps(final_chunk)}\n\n"
+                final_chunk = {
+                    "id": response_id,
+                    "model": self.model_name,
+                    "choices": [{"delta": {}, "index": 0, "finish_reason": "stop"}],
+                    "usage": usage,
+                }
+                yield f"data: {json.dumps(final_chunk)}\n\n"
                 break
 
         finally:
             self.model_lock.release()
 
     # Esegue generazione non-streaming del modello
-    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool, disconnect_event=None) -> Generator[str, None, str]:
+    def _collect_generation(self, prompt: str, max_new_tokens: int, is_chat: bool, disconnect_event=None, response_id=None) -> Generator[str, None, str]:
         """
         Esegue la generazione e restituisce l'output completo come stringa.
         Non effettua streaming verso il client.
@@ -235,7 +213,10 @@ class ToolStreamGenerator(ColoreLog):
 
         output = ""
         think_buffer = ""
-        found_and_think = False
+        in_answer = False
+        pending = ""
+        tool_mode = False
+        started = False
 
         try:
             console = Console()
@@ -261,16 +242,37 @@ class ToolStreamGenerator(ColoreLog):
                 if token is None:
                     break
 
-                if not found_and_think:
+                if not in_answer:
                     console.print(token, end="", style="dim cyan", markup=False)
                     think_buffer += token
 
-                    if "</think>" in think_buffer:
-                        found_and_think = True
-                        after_think = think_buffer.split("</think>", 1)[-1]
-                        output += after_think
-                else:
-                    output += token
+                    if "</think>" not in think_buffer:
+                        continue
+
+                    in_answer = True
+                    token = think_buffer.split("</think>", 1)[-1]
+
+                    if not token:
+                        continue
+
+                output += token
+
+                if tool_mode or response_id is None:
+                    continue
+                if "<|" in token or "|>" in token:
+                    continue
+
+                pending += token
+
+                if not started:
+                    pending = pending.lstrip()
+                    if not pending:
+                        continue
+                    started = True
+
+                safe, pending, tool_mode = self._split_safe(pending)
+                if safe:
+                    yield self._sse_delta(response_id, safe)
         finally:
             stop_event.set()
             thread.join()
