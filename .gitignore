@@ -2,3 +2,5 @@
 __pycache__
 todo.py
 activate_openvino_test.sh
+.gitattributes
+.editorconfig
