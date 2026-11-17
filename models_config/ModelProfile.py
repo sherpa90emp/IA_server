@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 # ModelProfile base per modello Qwen3.8 27B
 @dataclass
@@ -10,6 +11,7 @@ class ModelProfile:
 
     cache_size: int = 6
     max_num_seqs: int = 4
+    max_num_batched_tokens: Optional[int] = None
     dynamic_split_fuse: bool = True
     enable_prefix_caching: bool = True
 
@@ -40,8 +42,11 @@ class ModelProfile:
             return cls()
         else:
             return cls(
+                kv_cache_quantization="u8",
                 cache_size=2,
                 max_num_seqs=1,
+                max_num_batched_tokens= 256,
+                dynamic_split_fuse=False,
                 enable_prefix_caching=False,
                 cache_eviction_enabled=False, 
                 max_new_tokens=2048,

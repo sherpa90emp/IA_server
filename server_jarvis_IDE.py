@@ -77,6 +77,8 @@ class JarvisServerIDE(StreamGenerator, ToolStreamGenerator):
             scheduler_config.cache_size=self.PROFILE.cache_size
 
             scheduler_config.max_num_seqs=self.PROFILE.max_num_seqs
+            if self.PROFILE.max_num_batched_tokens is not None:
+                scheduler_config.max_num_batched_tokens=self.PROFILE.max_num_batched_tokens
             scheduler_config.dynamic_split_fuse=self.PROFILE.dynamic_split_fuse
             scheduler_config.enable_prefix_caching=self.PROFILE.enable_prefix_caching
 
